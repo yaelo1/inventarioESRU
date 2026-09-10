@@ -53,7 +53,7 @@ Puede ejecutarse otra vez: reutiliza las variantes ya generadas. No borres origi
 
 ## Comprobación posterior
 
-1. Abre `/api/health`; debe responder `status: ok` y `database: ready`.
+1. Abre `/api/health`; debe responder `ok: true` y `database: ready`.
 2. Inicia sesión y confirma Inventario, Montaje, Préstamos, Movimientos, Alertas y Usuarios.
 3. Sube una imagen de prueba y verifica miniatura y ampliación.
 4. Registra y devuelve un préstamo de prueba, validando fechas, pasajes y conservación.
@@ -61,4 +61,4 @@ Puede ejecutarse otra vez: reutiliza las variantes ya generadas. No borres origi
 
 ## Respaldo
 
-`npm run backup` crea una copia consistente de SQLite en `BACKUP_DIR` o `backups/`. Además, respalda `frontend/uploads/` con la misma fecha. Define retención automática y guarda una copia fuera del servidor.
+`npm run backup` crea una copia consistente de SQLite en `BACKUP_DIR` o `backups/`. Respalda también `frontend/uploads/` por separado y con la misma fecha. Define retención automática y guarda ambas copias fuera del servidor.
