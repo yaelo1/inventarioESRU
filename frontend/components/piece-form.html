@@ -1,0 +1,83 @@
+<section class="modal-backdrop" id="piece-modal" aria-hidden="true">
+  <form class="modal-panel" id="piece-form">
+    <header class="modal-header">
+      <h2>Pieza</h2>
+      <button class="button small" data-close-modal type="button">Cerrar</button>
+    </header>
+    <div class="modal-body">
+      <input id="piece-id" name="id" type="hidden">
+      <label class="form-field">
+        <span>Código interno</span>
+        <input id="internal_code" name="internal_code" required>
+      </label>
+      <label class="form-field">
+        <span>Nombre</span>
+        <input id="name" name="name" required>
+      </label>
+      <label class="form-field">
+        <span>Testamento</span>
+        <select id="testament" name="testament" required>
+          <option value="AT">Antiguo Testamento</option>
+          <option value="NT">Nuevo Testamento</option>
+        </select>
+      </label>
+      <label class="form-field">
+        <span>No. pasaje</span>
+        <input id="passage_number" name="passage_number" type="number" min="1" required>
+      </label>
+      <label class="form-field">
+        <span>No. registro</span>
+        <input id="registry_number" name="registry_number">
+      </label>
+      <label class="form-field">
+        <span>Consecutivo</span>
+        <input id="global_number" name="global_number" type="number" min="0">
+      </label>
+      <label class="form-field">
+        <span>Caja</span>
+        <input id="box" name="box">
+      </label>
+      <label class="form-field">
+        <span>Cajón</span>
+        <input id="drawer" name="drawer">
+      </label>
+      <label class="form-field">
+        <span>Vitrina</span>
+        <input id="showcase" name="showcase">
+      </label>
+      <label class="form-field">
+        <span>Ubicación expuesta</span>
+        <input id="exhibition_location" name="exhibition_location" placeholder="Ej. Uruguay">
+      </label>
+      <label class="form-field">
+        <span>Encargado</span>
+        <input id="custodian" name="custodian">
+      </label>
+      <label class="form-field">
+        <span>Material</span>
+        <input id="material" name="material">
+      </label>
+      <label class="form-field">
+        <span>Profundo</span>
+        <input id="deep" name="deep">
+      </label>
+      <label class="form-field">
+        <span>Largo</span>
+        <input id="length" name="length">
+      </label>
+      <label class="form-field">
+        <span>Alto</span>
+        <input id="height" name="height">
+      </label>
+      <label class="form-field full">
+        <span>Observaciones internas</span>
+        <textarea id="observations" name="observations"></textarea>
+      </label>
+    </div>
+    <footer class="modal-actions">
+      <button class="button" data-close-modal type="button">Cancelar</button>
+      <button class="button primary" type="submit">Guardar</button>
+    </footer>
+  </form>
+  <input id="image-input" type="file" accept="image/*">
+</section>

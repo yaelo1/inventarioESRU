@@ -1,0 +1,34 @@
+<section class="modal-backdrop" id="condition-modal" aria-hidden="true">
+  <form class="modal-panel compact" id="condition-form">
+    <header class="modal-header">
+      <h2 id="condition-title">Conservación</h2>
+      <button class="button small" data-close-modal type="button">Cerrar</button>
+    </header>
+    <div class="modal-body">
+      <input id="condition-piece-id" name="piece_id" type="hidden">
+      <label class="form-field">
+        <span>Conservación resultante</span>
+        <select name="condition_status" id="condition-status">
+          <option value="bueno">Bueno</option>
+          <option value="regular">Regular</option>
+          <option value="roto">Roto</option>
+          <option value="requiere_mantenimiento">Necesita restauración</option>
+          <option value="en_mantenimiento">En restauración</option>
+          <option value="sin_revisar">Sin revisar</option>
+        </select>
+      </label>
+      <label class="form-field">
+        <span>Responsable</span>
+        <input name="responsible">
+      </label>
+      <label class="form-field full">
+        <span>Notas de conservación</span>
+        <textarea name="reason"></textarea>
+      </label>
+    </div>
+    <footer class="modal-actions">
+      <button class="button" data-close-modal type="button">Cancelar</button>
+      <button class="button primary" type="submit">Guardar conservación</button>
+    </footer>
+  </form>
+</section>

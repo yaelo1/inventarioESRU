@@ -1,0 +1,46 @@
+<section class="modal-backdrop" id="passage-modal" aria-hidden="true">
+  <form class="modal-panel compact" id="passage-form">
+    <header class="modal-header">
+      <h2>Nuevo pasaje</h2>
+      <button class="button small" data-close-modal type="button">Cerrar</button>
+    </header>
+    <div class="modal-body">
+      <label class="form-field">
+        <span>Testamento</span>
+        <select name="testament" required>
+          <option value="AT">Antiguo Testamento</option>
+          <option value="NT">Nuevo Testamento</option>
+        </select>
+      </label>
+      <label class="form-field">
+        <span>Número</span>
+        <input name="number" type="number" min="1" required>
+      </label>
+      <label class="form-field full">
+        <span>Nombre del pasaje</span>
+        <input name="name" required>
+      </label>
+      <label class="form-field">
+        <span>Caja</span>
+        <input name="box">
+      </label>
+      <label class="form-field">
+        <span>Cajón</span>
+        <input name="drawer">
+      </label>
+      <label class="form-field">
+        <span>Vitrina</span>
+        <input name="showcase">
+      </label>
+      <label class="form-field full">
+        <span>Observaciones</span>
+        <textarea name="observations"></textarea>
+      </label>
+      <p class="modal-status full" id="passage-status" role="status"></p>
+    </div>
+    <footer class="modal-actions">
+      <button class="button" data-close-modal type="button">Cancelar</button>
+      <button class="button primary" type="submit">Crear pasaje</button>
+    </footer>
+  </form>
+</section>

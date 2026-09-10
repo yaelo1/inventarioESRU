@@ -1,0 +1,38 @@
+<section class="modal-backdrop" id="exhibition-pick-modal" aria-hidden="true">
+  <form class="modal-panel compact" id="exhibition-pick-form">
+    <header class="modal-header">
+      <h2 id="exhibition-pick-title">Salida a exposición</h2>
+      <button class="button small" data-close-modal type="button">Cerrar</button>
+    </header>
+    <div class="modal-body">
+      <input id="exhibition-pick-piece-id" name="piece_id" type="hidden">
+      <label class="form-field full">
+        <span>Pasaje destino</span>
+        <select id="exhibition-pick-target-passage" name="target_passage_id" required></select>
+      </label>
+      <div class="borrow-fields full" id="exhibition-pick-borrow-fields" hidden>
+        <label class="form-field">
+          <span>Retorno esperado</span>
+          <input id="exhibition-pick-return-date" name="expected_return_date" type="date">
+        </label>
+        <label class="form-field">
+          <span>Encargado de entrega</span>
+          <input name="responsible_out">
+        </label>
+      </div>
+      <label class="form-field">
+        <span>Solicita</span>
+        <input name="requested_by">
+      </label>
+      <label class="form-field full">
+        <span>Notas de salida y montaje</span>
+        <textarea name="notes"></textarea>
+      </label>
+      <p class="modal-status full" id="exhibition-pick-status" role="status"></p>
+    </div>
+    <footer class="modal-actions">
+      <button class="button" data-close-modal type="button">Cancelar</button>
+      <button class="button primary" type="submit">Agregar a guía</button>
+    </footer>
+  </form>
+</section>

@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventario FAMMA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/frontend/styles.css">
+</head>
+<body>
+  <section class="login-shell" id="login-screen" aria-labelledby="login-title">
+    <div class="login-card">
+      <div class="login-brand">
+        <img class="brand-logo brand-logo-famma" src="/frontend/assets/logo-famma.png" alt="Logo FAMMA">
+        <img class="brand-logo brand-logo-esru" src="/frontend/assets/logo-esru.png" alt="Logo Fundación Espinosa Rugarcía">
+      </div>
+      <div>
+        <p class="eyebrow">Acceso interno</p>
+        <h1 id="login-title">Inventario de piezas artesanales</h1>
+      </div>
+      <form class="login-form" id="login-form">
+        <label>
+          <span>Correo</span>
+          <input id="login-email" name="email" type="email" autocomplete="email" required>
+        </label>
+        <label>
+          <span>Contraseña</span>
+          <span class="password-input-wrap">
+            <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+            <button
+              class="password-toggle"
+              id="login-password-toggle"
+              type="button"
+              aria-label="Mostrar contraseña"
+              aria-controls="login-password"
+              aria-pressed="false"
+              title="Mostrar contraseña"
+            >
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2.06 12.35a1 1 0 0 1 0-.7C3.68 7.78 7.46 5 12 5c4.54 0 8.32 2.78 9.94 6.65a1 1 0 0 1 0 .7C20.32 16.22 16.54 19 12 19c-4.54 0-8.32-2.78-9.94-6.65Z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+          </span>
+        </label>
+        <button class="button primary" type="submit">Entrar</button>
+        <p class="modal-status" id="login-status" role="status"></p>
+      </form>
+    </div>
+  </section>
+
+  <header class="app-header">
+    <div class="brand-lockup" aria-label="Fundación Amparo y Manuel y ESRU">
+      <img class="brand-logo brand-logo-famma" src="/frontend/assets/logo-famma.png" alt="Logo FAMMA">
+      <img class="brand-logo brand-logo-esru" src="/frontend/assets/logo-esru.png" alt="Logo Fundación Espinosa Rugarcía">
+    </div>
+    <div class="header-title">
+      <p class="eyebrow">FAMMA · Colección Nacimiento AER</p>
+      <h1>Inventario de piezas artesanales</h1>
+    </div>
+    <nav class="top-nav" aria-label="Secciones">
+      <button class="nav-button is-active" data-view="inventory">Inventario</button>
+      <button class="nav-button" data-view="mounting">Montaje</button>
+      <button class="nav-button" data-view="loans">Préstamos</button>
+      <button class="nav-button" data-view="movements">Movimientos</button>
+      <button class="nav-button" data-view="alerts">Alertas</button>
+      <button class="nav-button admin-only" data-view="users">Usuarios</button>
+      <button class="nav-button" id="account-button" type="button">Mi cuenta</button>
+      <button class="nav-button" id="logout-button" type="button">Salir</button>
+    </nav>
+  </header>
+
+  <main class="app-shell">
+    <p id="app-status" class="app-status" role="status" aria-live="polite"></p>
+    <section class="summary-grid" aria-label="Resumen">
+      <article class="summary-card">
+        <span class="summary-label">Piezas</span>
+        <strong id="stat-pieces">0</strong>
+      </article>
+      <article class="summary-card">
+        <span class="summary-label">Prestadas</span>
+        <strong id="stat-loaned">0</strong>
+      </article>
+      <article class="summary-card">
+        <span class="summary-label">Fuera por restauración</span>
+        <strong id="stat-missing">0</strong>
+      </article>
+      <article class="summary-card">
+        <span class="summary-label">Necesitan atención</span>
+        <strong id="stat-maintenance">0</strong>
+      </article>
+    </section>
+
+    <section class="panel" id="inventory-view" data-view-panel="inventory">
+      <div class="panel-header">
+        <div>
+          <h2>Inventario por pasaje</h2>
+          <p id="inventory-status" class="status-text" role="status"></p>
+        </div>
+        <div class="panel-actions">
+          <button class="button" id="new-passage-button" type="button">Nuevo pasaje</button>
+          <button class="button primary" id="new-piece-button" type="button">Nueva pieza</button>
+        </div>
+      </div>
+
+      <div class="inventory-layout">
+        <aside class="filter-sidebar" aria-label="Filtros de inventario">
+          <form class="filters" id="inventory-filters">
+            <label>
+              <span>Buscar</span>
+              <input id="search-input" name="q" type="search" placeholder="Ej. AT P4, Arca, P1-0003, Búfalo">
+            </label>
+            <label>
+              <span>Testamento</span>
+              <select id="testament-filter" name="testament">
+                <option value="">Todos</option>
+                <option value="AT">Antiguo Testamento</option>
+                <option value="NT">Nuevo Testamento</option>
+              </select>
+            </label>
+            <label>
+              <span>Pasaje</span>
+              <select id="passage-filter" name="passageNumber">
+                <option value="">Todos</option>
+              </select>
+            </label>
+            <label>
+              <span>Vitrina</span>
+              <select id="showcase-filter" name="showcase">
+                <option value="">Todas</option>
+              </select>
+            </label>
+            <label>
+              <span>Presencia</span>
+              <select id="presence-filter" name="presenceStatus">
+                <option value="">Todas</option>
+                <option value="en_caja">En caja</option>
+                <option value="en_vitrina">En vitrina</option>
+                <option value="prestada">Prestada</option>
+                <option value="en_mantenimiento">En restauración</option>
+                <option value="sin_confirmar">Sin confirmar</option>
+              </select>
+            </label>
+            <label>
+              <span>Conservación</span>
+              <select id="condition-filter" name="conditionStatus">
+                <option value="">Todas</option>
+                <option value="bueno">Bueno</option>
+                <option value="regular">Regular</option>
+                <option value="roto">Roto</option>
+                <option value="requiere_mantenimiento">Necesita restauración</option>
+                <option value="en_mantenimiento">En restauración</option>
+                <option value="sin_revisar">Sin revisar</option>
+              </select>
+            </label>
+            <label class="checkbox-label filter-bottom">
+              <input id="maintenance-filter" name="maintenanceRequired" type="checkbox">
+              <span>Solo restauración</span>
+            </label>
+          </form>
+        </aside>
+        <div id="inventory-grid" class="inventory-grid" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section class="panel is-hidden" id="mounting-view" data-view-panel="mounting">
+      <div class="panel-header">
+        <div>
+          <h2>Guía de salida a exposición</h2>
+          <p class="status-text">Piezas seleccionadas para que montaje saque solo lo necesario.</p>
+        </div>
+      </div>
+      <form class="movement-filters" id="mounting-filters">
+        <label>
+          <span>Pasaje destino</span>
+          <select id="mounting-passage-filter">
+            <option value="">Todos</option>
+          </select>
+        </label>
+        <label>
+          <span>Estado</span>
+          <select id="mounting-status-filter">
+            <option value="">Activas</option>
+            <option value="seleccionada">Seleccionadas</option>
+            <option value="sacada">Sacadas</option>
+            <option value="montada">Montadas</option>
+            <option value="no_seleccionada">No seleccionadas</option>
+            <option value="finalizada">Finalizadas</option>
+            <option value="cancelada">Canceladas</option>
+          </select>
+        </label>
+      </form>
+      <div id="mounting-list" class="mounting-list" aria-live="polite"></div>
+    </section>
+
+    <section class="panel is-hidden" id="loans-view" data-view-panel="loans">
+      <div class="panel-header">
+        <div>
+          <h2>Préstamos</h2>
+          <p class="status-text">Control visual de piezas prestadas entre pasajes.</p>
+        </div>
+      </div>
+      <form class="movement-filters" id="loan-filters">
+        <label>
+          <span>Estado</span>
+          <select id="loan-status-filter">
+            <option value="activo">Activos</option>
+            <option value="">Todos</option>
+            <option value="devuelto">Devueltos</option>
+            <option value="cancelado">Cancelados</option>
+          </select>
+        </label>
+        <label>
+          <span>Origen</span>
+          <select id="loan-origin-filter">
+            <option value="">Todos</option>
+          </select>
+        </label>
+        <label>
+          <span>Destino</span>
+          <select id="loan-destination-filter">
+            <option value="">Todos</option>
+          </select>
+        </label>
+        <label>
+          <span>Retorno</span>
+          <select id="loan-due-filter">
+            <option value="">Todos</option>
+            <option value="overdue">Atrasados</option>
+            <option value="soon">Próximos 7 días</option>
+            <option value="without-date">Sin fecha</option>
+          </select>
+        </label>
+      </form>
+      <div id="loan-list" class="loan-list" aria-live="polite"></div>
+    </section>
+
+    <section class="panel is-hidden" id="movements-view" data-view-panel="movements">
+      <div class="panel-header">
+        <div>
+          <h2>Movimientos recientes</h2>
+          <p class="status-text">Préstamos, devoluciones, restauración y cambios de estado.</p>
+        </div>
+      </div>
+      <form class="movement-filters" id="movement-filters">
+        <label>
+          <span>Desde</span>
+          <input id="movement-date-from" name="dateFrom" type="date">
+        </label>
+        <label>
+          <span>Hasta</span>
+          <input id="movement-date-to" name="dateTo" type="date">
+        </label>
+        <button class="button small" id="clear-movement-filters" type="button">Limpiar</button>
+      </form>
+      <div id="movement-list" class="movement-list" aria-live="polite"></div>
+    </section>
+
+    <section class="panel is-hidden" id="alerts-view" data-view-panel="alerts">
+      <div class="panel-header">
+        <div>
+          <h2>Alertas de custodia</h2>
+          <p class="status-text">Piezas rotas, no localizadas o marcadas para restauración.</p>
+        </div>
+      </div>
+      <div id="alerts-grid" class="inventory-grid" aria-live="polite"></div>
+    </section>
+
+    <section class="panel is-hidden admin-only" id="users-view" data-view-panel="users">
+      <div class="panel-header">
+        <div>
+          <h2>Usuarios</h2>
+          <p class="status-text">Accesos autorizados para operar el inventario.</p>
+        </div>
+      </div>
+      <form class="user-form" id="user-form">
+        <label>
+          <span>Nombre</span>
+          <input name="name" type="text" required>
+        </label>
+        <label>
+          <span>Correo</span>
+          <input name="email" type="email" required>
+        </label>
+        <label>
+          <span>Rol</span>
+          <select name="role">
+            <option value="operador">Operador</option>
+            <option value="admin">Admin</option>
+            <option value="consulta">Consulta</option>
+          </select>
+        </label>
+        <label>
+          <span>Contraseña temporal</span>
+          <input name="password" type="password" minlength="8" required>
+        </label>
+        <button class="button primary" type="submit">Crear usuario</button>
+      </form>
+      <div id="user-list" class="user-list" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <template id="piece-card-template">
+    <article class="piece-card">
+      <div class="piece-media">
+        <img class="piece-image" loading="lazy" decoding="async" alt="">
+        <span class="piece-placeholder">Sin imagen</span>
+        <button class="image-upload-button" data-action="image" type="button">Subir imagen</button>
+      </div>
+      <div class="piece-body">
+        <div class="piece-topline">
+          <span class="piece-code"></span>
+          <span class="piece-passage"></span>
+        </div>
+        <h3 class="piece-name"></h3>
+        <span class="piece-loan-flag">Prestada</span>
+        <span class="piece-pick-flag">Seleccionada para montaje</span>
+        <dl class="piece-meta">
+          <div>
+            <dt>Presencia</dt>
+            <dd class="piece-presence"></dd>
+          </div>
+          <div>
+            <dt>Conservación</dt>
+            <dd class="piece-condition"></dd>
+          </div>
+          <div class="piece-display-meta">
+            <dt>Exhibición</dt>
+            <dd class="piece-display-location"></dd>
+          </div>
+        </dl>
+        <div class="piece-status-row">
+          <span class="piece-status"></span>
+        </div>
+        <p class="piece-notes"></p>
+        <details class="piece-details">
+          <summary>Detalles</summary>
+          <dl class="piece-detail-list">
+            <div>
+              <dt>Material</dt>
+              <dd class="piece-material"></dd>
+            </div>
+            <div>
+              <dt>Medidas</dt>
+              <dd class="piece-measurements"></dd>
+            </div>
+            <div>
+              <dt>Resguardo completo</dt>
+              <dd class="piece-storage-detail"></dd>
+            </div>
+          </dl>
+        </details>
+      </div>
+      <footer class="piece-actions">
+        <button class="button small" data-action="edit" type="button">Editar</button>
+        <details class="action-menu">
+          <summary>Presencia</summary>
+          <div class="action-menu-panel">
+            <button data-action="present" type="button">Está en caja</button>
+            <button data-action="showcase" type="button">Está en vitrina</button>
+            <button data-action="restoration-presence" type="button">En restauración</button>
+          </div>
+        </details>
+        <button class="button small warning" data-action="condition" type="button">Revisar</button>
+        <button class="button small" data-action="select-exhibition" type="button">Preparar salida</button>
+        <button class="button small danger quiet" data-action="archive" type="button">Archivar</button>
+      </footer>
+    </article>
+  </template>
+
+  <template id="movement-row-template">
+    <article class="movement-row">
+      <strong class="movement-type"></strong>
+      <span class="movement-piece"></span>
+      <span class="movement-transition"></span>
+      <span class="movement-detail"></span>
+      <time class="movement-date"></time>
+    </article>
+  </template>
+
+  <template id="loan-row-template">
+    <article class="loan-card">
+      <div class="loan-media">
+        <img class="loan-image" alt="">
+        <span class="loan-placeholder">Sin imagen</span>
+        <span class="loan-status"></span>
+      </div>
+      <div class="loan-body">
+        <strong class="loan-piece"></strong>
+        <span class="loan-passage"></span>
+        <span class="loan-recipient"></span>
+        <span class="loan-dates"></span>
+        <p class="loan-notes"></p>
+      </div>
+      <footer class="loan-actions">
+        <button class="button small loan-return-button" data-action="return-loan" type="button">Registrar devolución</button>
+      </footer>
+    </article>
+  </template>
+
+  <template id="loan-passage-template">
+    <section class="loan-passage-group">
+      <header class="loan-passage-header">
+        <div class="loan-passage-photo">
+          <img alt="">
+          <span>Sin foto del pasaje</span>
+        </div>
+        <div class="loan-passage-heading">
+          <span class="loan-passage-reference"></span>
+          <h3 class="loan-passage-name"></h3>
+          <p class="loan-passage-summary"></p>
+        </div>
+      </header>
+      <div class="loan-card-grid"></div>
+    </section>
+  </template>
+
+  <template id="mounting-row-template">
+    <article class="mounting-row">
+      <div class="mounting-media">
+        <img class="mounting-image" alt="">
+        <span class="mounting-image-placeholder">Sin imagen</span>
+        <span class="mounting-status"></span>
+      </div>
+      <div class="mounting-identity">
+        <strong class="mounting-piece"></strong>
+        <span class="mounting-origin mounting-source-badge"></span>
+      </div>
+      <div class="mounting-detail">
+        <span class="mounting-storage"></span>
+        <span class="mounting-requested"></span>
+        <p class="mounting-notes"></p>
+      </div>
+      <div class="mounting-actions">
+        <button class="button small" data-action="pick-out" type="button">Sacada</button>
+        <button class="button small success" data-action="pick-mounted" type="button">Montada</button>
+        <button class="button small" data-action="pick-finished" type="button">Guardar y finalizar</button>
+        <button class="button small primary" data-action="pick-return" type="button">Desmontar y devolver</button>
+        <button class="button small danger quiet" data-action="pick-cancel" type="button">Cancelar</button>
+      </div>
+    </article>
+  </template>
+
+  <template id="mounting-passage-template">
+    <section class="mounting-passage-group">
+      <header class="mounting-passage-header">
+        <div class="mounting-passage-photo">
+          <img alt="">
+          <span>Sin foto del pasaje</span>
+        </div>
+        <div class="mounting-passage-heading">
+          <span class="mounting-passage-reference"></span>
+          <h3 class="mounting-passage-name"></h3>
+          <p class="mounting-passage-summary"></p>
+        </div>
+      </header>
+      <div class="mounting-piece-grid"></div>
+    </section>
+  </template>
+
+  <template id="user-row-template">
+    <article class="user-row">
+      <div>
+        <strong class="user-name"></strong>
+        <span class="user-email"></span>
+      </div>
+      <span class="user-role"></span>
+      <span class="user-state"></span>
+      <span class="user-password-state"></span>
+      <div class="user-actions">
+        <button class="button small" data-action="reset-user-password" type="button">Resetear contraseña</button>
+        <button class="button small success" data-action="reactivate-user" type="button">Reactivar</button>
+        <button class="button small danger quiet" data-action="deactivate-user" type="button">Desactivar</button>
+        <button class="button small danger quiet" data-action="delete-user" type="button">Eliminar definitivamente</button>
+      </div>
+    </article>
+  </template>
+
+  <template id="passage-group-template">
+    <section class="passage-group">
+      <header class="passage-group-header">
+      <div class="passage-photo">
+          <img loading="lazy" decoding="async" alt="">
+          <span>Sin foto</span>
+          <button class="button small" data-action="passage-image" type="button">Subir foto</button>
+        </div>
+        <div class="passage-heading">
+          <span class="passage-reference"></span>
+          <h3 class="passage-name"></h3>
+        </div>
+        <strong class="passage-count"></strong>
+        <button class="button small passage-toggle" type="button" aria-expanded="false">Ver piezas</button>
+      </header>
+      <div class="passage-piece-grid" hidden></div>
+    </section>
+  </template>
+
+  <div id="component-root"></div>
+  <div class="modal-backdrop confirm-backdrop" id="confirm-modal" aria-hidden="true">
+    <section class="modal-panel confirm-panel" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+      <header class="modal-header">
+        <div>
+          <p class="eyebrow">Confirmación</p>
+          <h2 id="confirm-title">Cancelar salida</h2>
+        </div>
+        <button class="button small" data-confirm-cancel type="button">Cerrar</button>
+      </header>
+      <div class="confirm-body">
+        <p id="confirm-message"></p>
+      </div>
+      <footer class="modal-actions">
+        <button class="button" data-confirm-cancel type="button">Conservar</button>
+        <button class="button danger" data-confirm-accept type="button">Cancelar salida</button>
+      </footer>
+    </section>
+  </div>
+  <div class="modal-backdrop" id="password-modal" aria-hidden="true">
+    <section class="modal-panel confirm-panel" role="dialog" aria-modal="true" aria-labelledby="password-title">
+      <header class="modal-header">
+        <div>
+          <p class="eyebrow">Usuarios</p>
+          <h2 id="password-title">Resetear contraseña</h2>
+        </div>
+        <button class="button small" data-password-cancel type="button">Cerrar</button>
+      </header>
+      <form id="password-form">
+        <div class="confirm-body">
+          <label class="form-field">
+            <span>Nueva contraseña temporal</span>
+            <input id="password-reset-value" type="password" minlength="8" autocomplete="new-password" required>
+          </label>
+          <p class="modal-status" id="password-status" role="status"></p>
+        </div>
+        <footer class="modal-actions">
+          <button class="button" data-password-cancel type="button">Cancelar</button>
+          <button class="button primary" type="submit">Guardar contraseña</button>
+        </footer>
+      </form>
+    </section>
+  </div>
+  <div class="modal-backdrop account-backdrop" id="account-modal" aria-hidden="true">
+    <section class="modal-panel confirm-panel" role="dialog" aria-modal="true" aria-labelledby="account-title">
+      <header class="modal-header">
+        <div>
+          <p class="eyebrow" id="account-eyebrow">Mi cuenta</p>
+          <h2 id="account-title">Cambiar contraseña</h2>
+        </div>
+        <button class="button small" data-account-close type="button">Cerrar</button>
+      </header>
+      <form id="account-form">
+        <div class="confirm-body account-body">
+          <div class="account-summary">
+            <strong id="account-user-name"></strong>
+            <span id="account-user-email"></span>
+          </div>
+          <p class="account-guidance" id="account-guidance">Usa tu contraseña actual para confirmar el cambio.</p>
+          <label class="form-field">
+            <span>Contraseña actual</span>
+            <input name="current_password" type="password" autocomplete="current-password" required>
+          </label>
+          <label class="form-field">
+            <span>Nueva contraseña</span>
+            <input name="password" type="password" minlength="8" autocomplete="new-password" required>
+          </label>
+          <label class="form-field">
+            <span>Confirmar nueva contraseña</span>
+            <input name="password_confirmation" type="password" minlength="8" autocomplete="new-password" required>
+          </label>
+          <p class="modal-status" id="account-status" role="status"></p>
+        </div>
+        <footer class="modal-actions">
+          <button class="button" data-account-close type="button">Cancelar</button>
+          <button class="button primary" type="submit">Cambiar contraseña</button>
+        </footer>
+      </form>
+    </section>
+  </div>
+  <div class="image-viewer" id="image-viewer" aria-hidden="true" role="dialog" aria-modal="true">
+    <button class="image-viewer-close" type="button" aria-label="Cerrar imagen">Cerrar</button>
+    <img id="image-viewer-img" alt="">
+  </div>
+  <input id="passage-image-input" type="file" accept="image/*">
+  <script src="/frontend/js/config.js"></script>
+  <script type="module" src="/frontend/js/app.js"></script>
+</body>
+</html>

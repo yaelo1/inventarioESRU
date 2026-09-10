@@ -1,0 +1,22 @@
+services:
+  inventario:
+    build: .
+    env_file: ${ENV_FILE:-.env.production}
+    environment:
+      DB_PATH: /data/inventario.sqlite
+      UPLOAD_DIR: /data/uploads
+      ORIGINAL_UPLOAD_DIR: /data/uploads/originals
+      DISPLAY_IMAGE_DIR: /data/uploads/display
+      THUMBNAIL_DIR: /data/uploads/thumbnails
+    ports:
+      - "127.0.0.1:${APP_PORT:-3000}:3000"
+    volumes:
+      - ./inventario.sqlite:/data/inventario.sqlite
+      - ./frontend/uploads:/data/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s

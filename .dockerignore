@@ -1,0 +1,9 @@
+node_modules
+.env
+.env.production
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+backups
+frontend/uploads
+inventario_nacimiento_FAMMA_2_10_7_3.html

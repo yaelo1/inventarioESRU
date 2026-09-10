@@ -1,0 +1,42 @@
+<section class="modal-backdrop" id="return-loan-modal" aria-hidden="true">
+  <form class="modal-panel compact" id="return-loan-form">
+    <header class="modal-header">
+      <h2 id="return-loan-title">Devolución</h2>
+      <button class="button small" data-close-modal type="button">Cerrar</button>
+    </header>
+    <div class="modal-body">
+      <input id="return-loan-id" name="loan_id" type="hidden">
+      <label class="form-field">
+        <span>Presencia al regresar</span>
+        <select name="presence_status" id="return-presence-status">
+          <option value="en_caja">En caja</option>
+          <option value="en_vitrina">En vitrina</option>
+          <option value="en_mantenimiento">En restauración</option>
+        </select>
+      </label>
+      <label class="form-field">
+        <span>Conservación al regresar</span>
+        <select name="condition_status" id="return-condition-status">
+          <option value="bueno">Bueno</option>
+          <option value="regular">Regular</option>
+          <option value="roto">Roto</option>
+          <option value="requiere_mantenimiento">Necesita restauración</option>
+          <option value="en_mantenimiento">En restauración</option>
+        </select>
+      </label>
+      <label class="form-field">
+        <span>Responsable recepción</span>
+        <input name="responsible_in">
+      </label>
+      <label class="form-field full">
+        <span>Condiciones y notas de devolución</span>
+        <textarea name="notes"></textarea>
+      </label>
+      <p class="modal-status full" id="return-loan-status" role="status"></p>
+    </div>
+    <footer class="modal-actions">
+      <button class="button" data-close-modal type="button">Cancelar</button>
+      <button class="button primary" type="submit">Guardar devolución</button>
+    </footer>
+  </form>
+</section>
