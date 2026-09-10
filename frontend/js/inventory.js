@@ -1,4 +1,13 @@
-export function renderPassageInventory({ container, pieces, passages, passageTemplate, pieceTemplate, filters, labelFor }) {
+export function renderPassageInventory({
+  container,
+  pieces,
+  passages,
+  passageTemplate,
+  pieceTemplate,
+  filters,
+  passageExpansion,
+  labelFor
+}) {
   container.innerHTML = '';
   const piecesByPassage = new Map();
   pieces.forEach((piece) => {
@@ -33,6 +42,7 @@ export function renderPassageInventory({ container, pieces, passages, passageTem
       : `${groupPieces.length} coincidencias · ${passage.pieces} total`;
     const grid = node.querySelector('.passage-piece-grid');
     const toggle = node.querySelector('.passage-toggle');
+    const passageKey = String(passage.id);
     let rendered = false;
     const setExpanded = (expanded) => {
       if (expanded && !rendered) {
@@ -44,8 +54,15 @@ export function renderPassageInventory({ container, pieces, passages, passageTem
       toggle.setAttribute('aria-expanded', String(expanded));
       toggle.textContent = expanded ? 'Ocultar piezas' : `Ver piezas (${groupPieces.length})`;
     };
-    toggle.addEventListener('click', () => setExpanded(toggle.getAttribute('aria-expanded') !== 'true'));
-    setExpanded(filteredResult);
+    toggle.addEventListener('click', () => {
+      const expanded = toggle.getAttribute('aria-expanded') !== 'true';
+      passageExpansion.set(passageKey, expanded);
+      setExpanded(expanded);
+    });
+    const initialExpanded = passageExpansion.has(passageKey)
+      ? passageExpansion.get(passageKey)
+      : filteredResult;
+    setExpanded(initialExpanded);
     container.appendChild(node);
   });
 }

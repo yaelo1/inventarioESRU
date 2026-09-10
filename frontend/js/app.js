@@ -38,7 +38,8 @@ const state = {
   alerts: [],
   loans: [],
   exhibitionPicks: [],
-  passages: []
+  passages: [],
+  passageExpansion: new Map()
 };
 
 const els = {};
@@ -206,6 +207,7 @@ async function enterApplication(user) {
 function showLogin(message = '') {
   document.body.classList.remove('is-authenticated', 'is-admin', 'is-readonly', 'password-change-required');
   state.currentUser = null;
+  state.passageExpansion.clear();
   setLoginPasswordVisibility(false);
   closeAccountModal(true);
   if (typeof message === 'string') setModalStatus(els.loginStatus, message);
@@ -427,6 +429,7 @@ function renderInventory() {
     passageTemplate: els.passageTemplate,
     pieceTemplate: els.pieceTemplate,
     filters: getFilterValues(),
+    passageExpansion: state.passageExpansion,
     labelFor
   });
 }
