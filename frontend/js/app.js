@@ -48,8 +48,11 @@ const state = {
   passageExpansion: new Map()
 };
 
+const ACTIVE_VIEW_KEY = 'inventory.activeView';
 const els = {};
 let statusTimer = null;
+let focusRefreshPromise = null;
+let lastFocusRefresh = 0;
 
 document.addEventListener('DOMContentLoaded', () => init().catch((error) => setStatus(error.message, true)));
 
@@ -156,6 +159,8 @@ function bindEvents() {
   els.accountModal.addEventListener('click', handleAccountModalClick);
   els.accountForm.addEventListener('submit', saveOwnPassword);
   window.addEventListener('inventory:unauthorized', showLogin);
+  window.addEventListener('focus', refreshOnFocus);
+  document.addEventListener('visibilitychange', refreshOnFocus);
   document.addEventListener('click', closePresenceMenusOnOutsideClick);
   document.addEventListener('click', handleImageViewerClick);
   document.addEventListener('keydown', (event) => {
@@ -170,7 +175,7 @@ function bindEvents() {
 async function restoreSession() {
   try {
     const result = await getCurrentUser();
-    await enterApplication(result.user);
+    await enterApplication(result.user, { restoreView: true });
   } catch (error) {
     showLogin();
   }
@@ -204,12 +209,13 @@ async function handleLogout() {
   }
 }
 
-async function enterApplication(user) {
+async function enterApplication(user, { restoreView = false } = {}) {
   state.currentUser = user;
   document.body.classList.add('is-authenticated');
   document.body.classList.toggle('is-admin', user.role === 'admin');
   document.body.classList.toggle('is-readonly', user.role === 'consulta');
-  activateView('inventory');
+  const savedView = restoreView ? sessionStorage.getItem(ACTIVE_VIEW_KEY) : null;
+  activateView(savedView || 'inventory');
   if (user.must_change_password) {
     document.body.classList.add('password-change-required');
     openAccountModal(true);
@@ -504,11 +510,50 @@ function handleNavClick(event) {
 }
 
 function activateView(view) {
-  const button = document.querySelector(`[data-view="${view}"]`);
+  const allowedView = view === 'users' && state.currentUser?.role !== 'admin' ? 'inventory' : view;
+  const button = document.querySelector(`[data-view="${allowedView}"]`);
   if (!button) return;
   document.querySelectorAll('[data-view]').forEach((item) => item.classList.toggle('is-active', item === button));
-  els.panels.forEach((panel) => panel.classList.toggle('is-hidden', panel.dataset.viewPanel !== view));
-  if (view === 'users') loadUsers();
+  els.panels.forEach((panel) => panel.classList.toggle('is-hidden', panel.dataset.viewPanel !== allowedView));
+  sessionStorage.setItem(ACTIVE_VIEW_KEY, allowedView);
+  if (allowedView === 'users') loadUsers();
+}
+
+function refreshOnFocus() {
+  if (document.hidden || !state.currentUser || document.body.classList.contains('password-change-required')) return;
+  if (focusRefreshPromise || Date.now() - lastFocusRefresh < 3000) return;
+  focusRefreshPromise = refreshActiveView()
+    .catch((error) => setStatus(error.message, true))
+    .finally(() => {
+      lastFocusRefresh = Date.now();
+      focusRefreshPromise = null;
+    });
+}
+
+async function refreshActiveView() {
+  const view = document.querySelector('[data-view].is-active')?.dataset.view || 'inventory';
+  if (view === 'inventory') {
+    await Promise.all([loadPassages(), loadShowcases()]);
+    await Promise.all([loadStats(), loadPieces()]);
+    return;
+  }
+  if (view === 'showcases') {
+    await Promise.all([loadPassages(), loadShowcases(), loadStats()]);
+    return;
+  }
+  if (view === 'mounting') {
+    await loadPassages();
+    await Promise.all([loadStats(), loadExhibitionPicks()]);
+    return;
+  }
+  if (view === 'loans') {
+    await loadPassages();
+    await Promise.all([loadStats(), loadLoans()]);
+    return;
+  }
+  if (view === 'movements') await Promise.all([loadStats(), loadMovements()]);
+  if (view === 'alerts') await Promise.all([loadStats(), loadAlerts()]);
+  if (view === 'users') await Promise.all([loadStats(), loadUsers()]);
 }
 
 async function handlePieceAction(event) {
