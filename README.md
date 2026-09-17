@@ -51,7 +51,7 @@ inventarioESRU/
 
 - Git.
 - Node.js 22 LTS con npm, o Docker con el complemento Compose.
-- Aproximadamente 5 GB libres si se va a instalar el inventario actual con todos sus originales.
+- Al menos 10 GB de almacenamiento persistente si se instalará el inventario actual, sus originales, crecimiento y respaldos.
 - Un dominio y certificado HTTPS para producción.
 
 ## Descargar e instalar
@@ -85,6 +85,8 @@ frontend/uploads/
 ```
 
 Ambos deben copiarse en la raíz y ruta indicadas antes de iniciar la aplicación. Deben respaldarse y restaurarse siempre juntos. No ejecutes `npm run seed` sobre esta base porque contiene el inventario existente.
+
+Entrega una copia consistente generada con `npm run backup`, no los archivos SQLite de una aplicación en ejecución. En el servidor, renombra esa copia como `inventario.sqlite` y conserva completa la estructura de `frontend/uploads/`. No transfieras `inventario.sqlite-wal` ni `inventario.sqlite-shm`.
 
 Para una instalación completamente nueva y vacía, el servidor crea el esquema al arrancar. Después se crea el primer administrador:
 
@@ -154,7 +156,7 @@ curl http://127.0.0.1:3000/api/health
 docker compose logs --tail=100 inventario
 ```
 
-La respuesta de salud debe contener `"ok":true` y `"database":"ready"`. Después se debe comprobar manualmente el login, inventario, montaje, préstamos, movimientos, alertas, usuarios y subida/ampliación de imágenes.
+La respuesta de salud debe contener `"ok":true` y `"database":"ready"`. Después se debe comprobar manualmente el login, inventario, vitrinas, montaje, préstamos, movimientos, alertas, usuarios y subida/ampliación de imágenes.
 
 ## Respaldos y actualizaciones
 
