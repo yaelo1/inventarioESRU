@@ -62,6 +62,7 @@
     </div>
     <nav class="top-nav" aria-label="Secciones">
       <button class="nav-button is-active" data-view="inventory">Inventario</button>
+      <button class="nav-button" data-view="showcases">Vitrinas</button>
       <button class="nav-button" data-view="mounting">Montaje</button>
       <button class="nav-button" data-view="loans">Préstamos</button>
       <button class="nav-button" data-view="movements">Movimientos</button>
@@ -163,6 +164,33 @@
         </aside>
         <div id="inventory-grid" class="inventory-grid" aria-live="polite"></div>
       </div>
+    </section>
+
+    <section class="panel is-hidden" id="showcases-view" data-view-panel="showcases">
+      <div class="panel-header">
+        <div>
+          <h2>Vitrinas</h2>
+          <p class="status-text">Medidas, ubicación y pasajes que comparte cada vitrina.</p>
+        </div>
+        <div class="panel-actions">
+          <button class="button primary" id="new-showcase-button" type="button">Nueva vitrina</button>
+        </div>
+      </div>
+      <form class="movement-filters" id="showcase-filters">
+        <label>
+          <span>Buscar</span>
+          <input id="showcase-search" type="search" placeholder="Código, vitrina, ubicación o pasaje">
+        </label>
+        <label>
+          <span>Asignación</span>
+          <select id="showcase-assignment-filter">
+            <option value="">Todas</option>
+            <option value="assigned">Con pasajes</option>
+            <option value="empty">Sin pasajes</option>
+          </select>
+        </label>
+      </form>
+      <div id="showcase-grid" class="showcase-grid" aria-live="polite"></div>
     </section>
 
     <section class="panel is-hidden" id="mounting-view" data-view-panel="mounting">
@@ -478,6 +506,41 @@
     </article>
   </template>
 
+  <template id="showcase-card-template">
+    <article class="showcase-card">
+      <header class="showcase-card-header">
+        <div>
+          <span class="showcase-code"></span>
+        </div>
+        <h3 class="showcase-name"></h3>
+        <strong class="showcase-measurements"></strong>
+      </header>
+      <dl class="showcase-meta">
+        <div>
+          <dt>Soporte</dt>
+          <dd class="showcase-support"></dd>
+        </div>
+        <div>
+          <dt>Forma</dt>
+          <dd class="showcase-shape"></dd>
+        </div>
+        <div class="full">
+          <dt>Ubicación</dt>
+          <dd class="showcase-location"></dd>
+        </div>
+      </dl>
+      <div class="showcase-passage-block">
+        <strong class="showcase-counts"></strong>
+        <ul class="showcase-passages"></ul>
+      </div>
+      <p class="showcase-notes"></p>
+      <footer class="showcase-actions">
+        <button class="button small" data-action="edit-showcase" type="button">Editar detalles</button>
+        <button class="button small primary" data-action="assign-passages" type="button">Administrar pasajes</button>
+      </footer>
+    </article>
+  </template>
+
   <template id="passage-group-template">
     <section class="passage-group">
       <header class="passage-group-header">
@@ -489,6 +552,7 @@
         <div class="passage-heading">
           <span class="passage-reference"></span>
           <h3 class="passage-name"></h3>
+          <span class="passage-showcase"></span>
         </div>
         <strong class="passage-count"></strong>
         <button class="button small passage-toggle" type="button" aria-expanded="false">Ver piezas</button>

@@ -22,6 +22,35 @@ CREATE TABLE IF NOT EXISTS passages (
   UNIQUE (testament, number)
 );
 
+CREATE TABLE IF NOT EXISTS showcases (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  section TEXT,
+  support_type TEXT NOT NULL DEFAULT 'Vitrina',
+  shape TEXT NOT NULL DEFAULT 'rectangular'
+    CHECK (shape IN ('rectangular', 'circular', 'irregular', 'otro')),
+  length_cm REAL CHECK (length_cm IS NULL OR length_cm > 0),
+  width_cm REAL CHECK (width_cm IS NULL OR width_cm > 0),
+  height_cm REAL CHECK (height_cm IS NULL OR height_cm > 0),
+  diameter_cm REAL CHECK (diameter_cm IS NULL OR diameter_cm > 0),
+  measurement_notes TEXT,
+  location TEXT,
+  observations TEXT,
+  active INTEGER NOT NULL DEFAULT 1 CHECK (active IN (0, 1)),
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS showcase_passages (
+  showcase_id INTEGER NOT NULL,
+  passage_id INTEGER NOT NULL UNIQUE,
+  assigned_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (showcase_id, passage_id),
+  FOREIGN KEY (showcase_id) REFERENCES showcases(id) ON DELETE CASCADE,
+  FOREIGN KEY (passage_id) REFERENCES passages(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS pieces (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   passage_id INTEGER NOT NULL,
@@ -152,6 +181,8 @@ CREATE TABLE IF NOT EXISTS user_sessions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_passages_testament_number ON passages(testament, number);
+CREATE INDEX IF NOT EXISTS idx_showcases_code ON showcases(code);
+CREATE INDEX IF NOT EXISTS idx_showcase_passages_showcase ON showcase_passages(showcase_id);
 CREATE INDEX IF NOT EXISTS idx_pieces_passage ON pieces(passage_id);
 CREATE INDEX IF NOT EXISTS idx_pieces_presence ON pieces(presence_status);
 CREATE INDEX IF NOT EXISTS idx_pieces_condition ON pieces(condition_status);

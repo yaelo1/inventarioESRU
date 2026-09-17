@@ -51,10 +51,27 @@ npm test
 
 Puede ejecutarse otra vez: reutiliza las variantes ya generadas. No borres originales hasta validar el inventario y contar con un respaldo externo.
 
+## Catálogo de vitrinas
+
+La primera actualización que incluya el módulo `Vitrinas` debe importar el catálogo normalizado:
+
+```bash
+npm run backup
+npm run import-showcases
+```
+
+Con Docker Compose:
+
+```bash
+docker compose run --rm inventario npm run import-showcases
+```
+
+El proceso crea o actualiza las fichas físicas y asigna únicamente pasajes que todavía no tengan vitrina. El archivo Excel original no es necesario en el servidor; la fuente versionada está en `data/showcases.json`.
+
 ## Comprobación posterior
 
 1. Abre `/api/health`; debe responder `ok: true` y `database: ready`.
-2. Inicia sesión y confirma Inventario, Montaje, Préstamos, Movimientos, Alertas y Usuarios.
+2. Inicia sesión y confirma Inventario, Vitrinas, Montaje, Préstamos, Movimientos, Alertas y Usuarios.
 3. Sube una imagen de prueba y verifica miniatura y ampliación.
 4. Registra y devuelve un préstamo de prueba, validando fechas, pasajes y conservación.
 5. Revisa espacio en disco, memoria y logs del proceso.

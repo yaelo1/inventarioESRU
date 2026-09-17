@@ -92,6 +92,31 @@ export function getPassages() {
   return request('/passages');
 }
 
+export function getShowcases() {
+  return request('/showcases');
+}
+
+export function createShowcase(showcase) {
+  return request('/showcases', {
+    method: 'POST',
+    body: JSON.stringify(showcase)
+  });
+}
+
+export function updateShowcase(id, showcase) {
+  return request(`/showcases/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(showcase)
+  });
+}
+
+export function assignShowcasePassages(id, passageIds) {
+  return request(`/showcases/${id}/passages`, {
+    method: 'PUT',
+    body: JSON.stringify({ passage_ids: passageIds })
+  });
+}
+
 export function createPassage(passage) {
   return request('/passages', {
     method: 'POST',

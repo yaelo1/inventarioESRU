@@ -9,6 +9,7 @@
     "seed": "node scripts/seed.js",
     "backup": "node scripts/backup.js",
     "optimize-images": "node scripts/optimize-images.js",
+    "import-showcases": "node scripts/import-showcases.js",
     "create-admin": "node scripts/create-admin.js",
     "test": "node --test tests/*.test.js"
   },

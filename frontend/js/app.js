@@ -1,9 +1,11 @@
 import {
   archivePiece,
+  assignShowcasePassages,
   changeOwnPassword,
   createExhibitionPick,
   createPassage,
   createPiece,
+  createShowcase,
   createUser,
   deactivateUser,
   deleteUserPermanently,
@@ -15,6 +17,7 @@ import {
   getPieceMovements,
   getPieces,
   getPieceStats,
+  getShowcases,
   getUsers,
   login,
   logout,
@@ -24,12 +27,14 @@ import {
   returnPieceLoan,
   updateExhibitionPickStatus,
   updatePiece,
+  updateShowcase,
   uploadPassageImage,
   uploadPieceImage
 } from './api.js';
 import { renderPassageInventory, renderPieceCards } from './inventory.js';
 import { formatSqliteTimestamp, renderLoans } from './loans.js';
 import { renderMounting } from './mounting.js';
+import { renderShowcases } from './showcases.js';
 
 const state = {
   currentUser: null,
@@ -39,6 +44,7 @@ const state = {
   loans: [],
   exhibitionPicks: [],
   passages: [],
+  showcases: [],
   passageExpansion: new Map()
 };
 
@@ -72,6 +78,12 @@ function cacheElements() {
     grid: document.getElementById('inventory-grid'),
     alertsGrid: document.getElementById('alerts-grid'),
     mountingList: document.getElementById('mounting-list'),
+    showcaseGrid: document.getElementById('showcase-grid'),
+    showcaseTemplate: document.getElementById('showcase-card-template'),
+    showcaseFilters: document.getElementById('showcase-filters'),
+    showcaseSearch: document.getElementById('showcase-search'),
+    showcaseAssignmentFilter: document.getElementById('showcase-assignment-filter'),
+    newShowcaseButton: document.getElementById('new-showcase-button'),
     mountingPassageFilter: document.getElementById('mounting-passage-filter'),
     mountingStatusFilter: document.getElementById('mounting-status-filter'),
     loanList: document.getElementById('loan-list'),
@@ -124,6 +136,10 @@ function bindEvents() {
   els.grid.addEventListener('click', handlePieceAction);
   els.alertsGrid.addEventListener('click', handlePieceAction);
   els.mountingList.addEventListener('click', handleMountingAction);
+  els.showcaseGrid.addEventListener('click', handleShowcaseAction);
+  els.showcaseSearch.addEventListener('input', debounce(renderShowcaseCatalog, 180));
+  els.showcaseFilters.addEventListener('change', renderShowcaseCatalog);
+  els.newShowcaseButton.addEventListener('click', () => openShowcaseModal());
   els.mountingPassageFilter.addEventListener('change', loadExhibitionPicks);
   els.mountingStatusFilter.addEventListener('change', loadExhibitionPicks);
   els.loanList.addEventListener('click', handleLoanAction);
@@ -278,7 +294,9 @@ async function loadComponents() {
     fetchComponent('/frontend/components/passage-form.html'),
     fetchComponent('/frontend/components/condition-dialog.html'),
     fetchComponent('/frontend/components/return-loan-dialog.html'),
-    fetchComponent('/frontend/components/exhibition-pick-dialog.html')
+    fetchComponent('/frontend/components/exhibition-pick-dialog.html'),
+    fetchComponent('/frontend/components/showcase-form.html'),
+    fetchComponent('/frontend/components/showcase-assignment-dialog.html')
   ]);
   els.componentRoot.innerHTML = fragments.join('');
 
@@ -296,18 +314,31 @@ async function loadComponents() {
   els.returnLoanForm = document.getElementById('return-loan-form');
   els.returnLoanStatus = document.getElementById('return-loan-status');
   els.imageInput = document.getElementById('image-input');
+  els.showcaseModal = document.getElementById('showcase-modal');
+  els.showcaseForm = document.getElementById('showcase-form');
+  els.showcaseFormStatus = document.getElementById('showcase-form-status');
+  els.showcaseAssignmentModal = document.getElementById('showcase-assignment-modal');
+  els.showcaseAssignmentForm = document.getElementById('showcase-assignment-form');
+  els.showcaseAssignmentStatus = document.getElementById('showcase-assignment-status');
+  els.showcasePassageSearch = document.getElementById('showcase-passage-search');
+  els.showcasePassageList = document.getElementById('showcase-passage-list');
 
   els.pieceModal.addEventListener('click', closeOnBackdrop);
   els.passageModal.addEventListener('click', closeOnBackdrop);
   els.conditionModal.addEventListener('click', closeOnBackdrop);
   els.exhibitionPickModal.addEventListener('click', closeOnBackdrop);
   els.returnLoanModal.addEventListener('click', closeOnBackdrop);
+  els.showcaseModal.addEventListener('click', closeOnBackdrop);
+  els.showcaseAssignmentModal.addEventListener('click', closeOnBackdrop);
   els.pieceForm.addEventListener('submit', savePiece);
   els.passageForm.addEventListener('submit', savePassage);
   els.conditionForm.addEventListener('submit', saveCondition);
   els.exhibitionPickForm.addEventListener('submit', saveExhibitionPick);
   document.getElementById('exhibition-pick-target-passage').addEventListener('change', updateExhibitionBorrowFields);
   els.returnLoanForm.addEventListener('submit', saveReturnLoan);
+  els.showcaseForm.addEventListener('submit', saveShowcase);
+  els.showcaseAssignmentForm.addEventListener('submit', saveShowcaseAssignments);
+  els.showcasePassageSearch.addEventListener('input', filterPassageAssignments);
   document.querySelectorAll('[data-close-modal]').forEach((button) => {
     button.addEventListener('click', closeModals);
   });
@@ -320,7 +351,7 @@ async function fetchComponent(path) {
 }
 
 async function refreshAll() {
-  await loadPassages();
+  await Promise.all([loadPassages(), loadShowcases()]);
   await Promise.all([loadStats(), loadPieces(), loadAlerts(), loadMovements(), loadLoans(), loadExhibitionPicks()]);
 }
 
@@ -351,11 +382,16 @@ async function loadPieces() {
     if (requestSequence !== pieceRequestSequence) return;
     state.pieces = pieces;
     renderInventory();
-    populateShowcaseFilter(state.pieces);
     els.status.textContent = `${state.pieces.length} piezas sincronizadas desde SQLite.`;
   } catch (error) {
     setStatus(error.message, true);
   }
+}
+
+async function loadShowcases() {
+  state.showcases = await getShowcases();
+  populateShowcaseFilter(state.showcases);
+  renderShowcaseCatalog();
 }
 
 async function loadAlerts() {
@@ -434,6 +470,18 @@ function renderInventory() {
   });
 }
 
+function renderShowcaseCatalog() {
+  renderShowcases({
+    container: els.showcaseGrid,
+    template: els.showcaseTemplate,
+    showcases: state.showcases,
+    filters: {
+      q: els.showcaseSearch.value,
+      assignment: els.showcaseAssignmentFilter.value
+    }
+  });
+}
+
 function getFilterValues() {
   const passageValue = document.getElementById('passage-filter').value;
   const [passageTestament, passageNumber] = passageValue ? passageValue.split(':') : ['', ''];
@@ -491,6 +539,16 @@ async function handlePieceAction(event) {
   if (action === 'condition') openConditionModal(piece);
   if (action === 'select-exhibition') openExhibitionPickModal(piece);
   if (action === 'image') chooseImage(piece);
+}
+
+function handleShowcaseAction(event) {
+  const button = event.target.closest('[data-action]');
+  const card = button?.closest('[data-showcase-id]');
+  if (!button || !card) return;
+  const showcase = state.showcases.find((item) => String(item.id) === card.dataset.showcaseId);
+  if (!showcase) return;
+  if (button.dataset.action === 'edit-showcase') openShowcaseModal(showcase);
+  if (button.dataset.action === 'assign-passages') openShowcaseAssignment(showcase);
 }
 
 async function handleMountingAction(event) {
@@ -681,7 +739,6 @@ function openPieceModal(piece) {
   setFormValue('global_number', piece?.global_number || '');
   setFormValue('box', piece?.box || '');
   setFormValue('drawer', piece?.drawer || '');
-  setFormValue('showcase', piece?.showcase || '');
   setFormValue('exhibition_location', piece?.exhibition_location || '');
   setFormValue('custodian', piece?.custodian || '');
   setFormValue('material', piece?.material || '');
@@ -714,6 +771,67 @@ function openPassageModal() {
   els.passageForm.reset();
   setModalStatus(els.passageStatus, '');
   openModal(els.passageModal);
+}
+
+function openShowcaseModal(showcase = null) {
+  els.showcaseForm.reset();
+  setFormValue('showcase-id', showcase?.id || '');
+  setFormValue('showcase-code', showcase?.code || '');
+  setFormValue('showcase-name', showcase?.name || '');
+  setFormValue('showcase-support-type', showcase?.support_type || 'Vitrina');
+  setFormValue('showcase-shape', showcase?.shape || 'rectangular');
+  setFormValue('showcase-location', showcase?.location || '');
+  setFormValue('showcase-length', showcase?.length_cm || '');
+  setFormValue('showcase-width', showcase?.width_cm || '');
+  setFormValue('showcase-height', showcase?.height_cm || '');
+  setFormValue('showcase-diameter', showcase?.diameter_cm || '');
+  setFormValue('showcase-measurement-notes', showcase?.measurement_notes || '');
+  setFormValue('showcase-observations', showcase?.observations || '');
+  document.getElementById('showcase-form-title').textContent = showcase ? `Editar · ${showcase.code}` : 'Nueva vitrina';
+  setModalStatus(els.showcaseFormStatus, '');
+  openModal(els.showcaseModal);
+}
+
+function openShowcaseAssignment(showcase) {
+  els.showcaseAssignmentForm.reset();
+  setFormValue('showcase-assignment-id', showcase.id);
+  document.getElementById('showcase-assignment-title').textContent = `${showcase.code} · ${showcase.name}`;
+  els.showcasePassageSearch.value = '';
+  setModalStatus(els.showcaseAssignmentStatus, '');
+  renderPassageAssignments(showcase);
+  openModal(els.showcaseAssignmentModal);
+}
+
+function renderPassageAssignments(showcase) {
+  els.showcasePassageList.innerHTML = '';
+  state.passages.forEach((passage) => {
+    const row = document.createElement('label');
+    row.className = 'passage-assignment-row';
+    row.dataset.search = `${passage.testament} p${passage.number} ${passage.name}`.toLocaleLowerCase('es-MX');
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.name = 'passage_ids';
+    checkbox.value = passage.id;
+    checkbox.checked = Number(passage.showcase_id) === Number(showcase.id);
+    const identity = document.createElement('span');
+    identity.className = 'passage-assignment-identity';
+    const title = document.createElement('strong');
+    title.textContent = `${passage.testament} P${passage.number} · ${passage.name}`;
+    const detail = document.createElement('small');
+    detail.textContent = passage.showcase_id && Number(passage.showcase_id) !== Number(showcase.id)
+      ? `Actualmente en ${passage.showcase_code}`
+      : `${passage.pieces} piezas`;
+    identity.append(title, detail);
+    row.append(checkbox, identity);
+    els.showcasePassageList.appendChild(row);
+  });
+}
+
+function filterPassageAssignments() {
+  const query = els.showcasePassageSearch.value.trim().toLocaleLowerCase('es-MX');
+  els.showcasePassageList.querySelectorAll('.passage-assignment-row').forEach((row) => {
+    row.hidden = Boolean(query) && !row.dataset.search.includes(query);
+  });
 }
 
 function openReturnLoanModal(loan) {
@@ -781,7 +899,6 @@ async function savePassage(event) {
       name: data.name,
       box: data.box,
       drawer: data.drawer,
-      showcase: data.showcase,
       observations: data.observations
     });
     closeModals();
@@ -790,6 +907,62 @@ async function savePassage(event) {
   } catch (error) {
     setModalStatus(els.passageStatus, error.message, true);
     setStatus(error.message, true);
+  } finally {
+    submitButton.disabled = false;
+  }
+}
+
+async function saveShowcase(event) {
+  event.preventDefault();
+  const data = Object.fromEntries(new FormData(els.showcaseForm));
+  const id = data.id;
+  delete data.id;
+  const submitButton = els.showcaseForm.querySelector('button[type="submit"]');
+  try {
+    submitButton.disabled = true;
+    setModalStatus(els.showcaseFormStatus, 'Guardando vitrina...');
+    if (id) await updateShowcase(id, data);
+    else await createShowcase(data);
+    closeModals();
+    await loadShowcases();
+    setStatus('Vitrina guardada.');
+  } catch (error) {
+    setModalStatus(els.showcaseFormStatus, error.message, true);
+  } finally {
+    submitButton.disabled = false;
+  }
+}
+
+async function saveShowcaseAssignments(event) {
+  event.preventDefault();
+  const data = new FormData(els.showcaseAssignmentForm);
+  const showcaseId = Number(data.get('showcase_id'));
+  const passageIds = data.getAll('passage_ids').map(Number);
+  const showcase = state.showcases.find((item) => item.id === showcaseId);
+  const reassigned = state.passages.filter((passage) => (
+    passageIds.includes(Number(passage.id))
+    && passage.showcase_id
+    && Number(passage.showcase_id) !== showcaseId
+  ));
+  if (reassigned.length) {
+    const confirmed = await confirmAction({
+      title: 'Reasignar pasajes',
+      message: `${reassigned.length} pasaje${reassigned.length === 1 ? '' : 's'} cambiará${reassigned.length === 1 ? '' : 'n'} de vitrina a ${showcase.code}.`,
+      acceptLabel: 'Reasignar'
+    });
+    if (!confirmed) return;
+  }
+  const submitButton = els.showcaseAssignmentForm.querySelector('button[type="submit"]');
+  try {
+    submitButton.disabled = true;
+    setModalStatus(els.showcaseAssignmentStatus, 'Guardando asignación...');
+    await assignShowcasePassages(showcaseId, passageIds);
+    closeModals();
+    await Promise.all([loadPassages(), loadShowcases()]);
+    await loadPieces();
+    setStatus('Asignación de vitrina actualizada.');
+  } catch (error) {
+    setModalStatus(els.showcaseAssignmentStatus, error.message, true);
   } finally {
     submitButton.disabled = false;
   }
@@ -953,7 +1126,6 @@ function piecePayload(formData) {
     global_number: data.global_number ? Number(data.global_number) : null,
     box: data.box.trim(),
     drawer: data.drawer.trim(),
-    showcase: data.showcase.trim(),
     exhibition_location: data.exhibition_location.trim(),
     custodian: data.custodian.trim(),
     material: data.material.trim(),
@@ -1185,16 +1357,14 @@ function localDateValue(date) {
   ].join('-');
 }
 
-function populateShowcaseFilter(pieces) {
+function populateShowcaseFilter(showcases) {
   const select = document.getElementById('showcase-filter');
   const current = select.value;
-  const showcases = [...new Set(pieces.map((piece) => piece.showcase).filter(Boolean))]
-    .sort((a, b) => Number(a) - Number(b));
   select.innerHTML = '<option value="">Todas</option>';
   showcases.forEach((showcase) => {
     const option = document.createElement('option');
-    option.value = showcase;
-    option.textContent = `Vitrina ${showcase}`;
+    option.value = showcase.id;
+    option.textContent = `${showcase.code} · ${showcase.name}`;
     select.appendChild(option);
   });
   if ([...select.options].some((option) => option.value === current)) select.value = current;

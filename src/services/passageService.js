@@ -1,5 +1,4 @@
 const passageModel = require('../models/passageModel');
-const env = require('../config/env');
 
 function appError(message, status, errors) {
   const error = new Error(message);
@@ -32,7 +31,7 @@ function createPassage(body) {
     name,
     box: body.box ? String(body.box).trim() : null,
     drawer: body.drawer ? String(body.drawer).trim() : null,
-    showcase: body.showcase ? String(body.showcase).trim() : null,
+    showcase: null,
     observations: body.observations ? String(body.observations).trim() : null
   });
 }

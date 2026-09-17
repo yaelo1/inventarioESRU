@@ -18,10 +18,14 @@ function appError(message, status, errors) {
 }
 
 function listPieces(query) {
+  const showcase = query.showcase ? Number(query.showcase) : null;
+  if (query.showcase && (!Number.isInteger(showcase) || showcase <= 0)) {
+    throw appError('showcase debe ser un ID entero válido', 400);
+  }
   return pieceModel.list({
     testament: query.testament ? String(query.testament).toUpperCase() : null,
     passageNumber: query.passageNumber ? Number(query.passageNumber) : null,
-    showcase: query.showcase ? String(query.showcase).trim() : null,
+    showcase,
     presenceStatus: query.presenceStatus || null,
     conditionStatus: query.conditionStatus || null,
     maintenanceRequired: query.maintenanceRequired === 'true',
@@ -113,7 +117,7 @@ function validatePiece(body, partial = false) {
     }
   }
 
-  for (const key of ['registry_number', 'artist', 'box', 'drawer', 'showcase', 'exhibition_location', 'custodian', 'material', 'deep', 'length', 'height', 'observations']) {
+  for (const key of ['registry_number', 'artist', 'box', 'drawer', 'exhibition_location', 'custodian', 'material', 'deep', 'length', 'height', 'observations']) {
     if (body[key] !== undefined) data[key] = body[key] === null ? null : String(body[key]).trim();
   }
 

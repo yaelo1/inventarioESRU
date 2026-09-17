@@ -12,6 +12,8 @@ Sistema web interno para la custodia y operación del inventario de piezas de la
 - Préstamos exclusivamente entre pasajes, con fechas previstas y reales de devolución.
 - Historial de movimientos y responsables.
 - Fotografías de piezas y pasajes con miniaturas optimizadas.
+- Catálogo independiente de vitrinas, medidas y ubicación física.
+- Asignación de uno o varios pasajes por vitrina, con un máximo de una vitrina por pasaje.
 - Usuarios con roles, contraseña temporal y cambio obligatorio en el primer acceso.
 - Administración, desactivación, reactivación y eliminación de cuentas.
 
@@ -92,6 +94,14 @@ npm run create-admin -- correo@dominio.com "contraseña segura" "Nombre del admi
 
 `npm run seed` se reserva para cargar `data/seed-inventory.json` en una base nueva cuando realmente se requieran esos datos iniciales.
 
+El catálogo inicial de vitrinas fue normalizado desde la hoja museográfica y está en `data/showcases.json`. Después de cargar los pasajes en una base nueva, impórtalo con:
+
+```bash
+npm run import-showcases
+```
+
+El comando puede repetirse sin duplicar vitrinas y no reemplaza asignaciones que ya hayan sido modificadas desde la aplicación.
+
 ## Variables de entorno
 
 - `.env.example`: configuración de desarrollo local.
@@ -130,6 +140,7 @@ mkdir -p frontend/uploads
 
 ```bash
 docker compose build
+docker compose run --rm inventario npm run import-showcases
 docker compose up -d
 docker compose ps
 ```
@@ -161,6 +172,7 @@ Para actualizar el código:
 git pull
 npm ci --omit=dev
 npm test
+npm run import-showcases
 docker compose build
 docker compose up -d
 ```

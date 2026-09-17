@@ -22,7 +22,7 @@ function list(filters = {}) {
     params.passageNumber = filters.passageNumber;
   }
   if (filters.showcase) {
-    where.push('pc.showcase = @showcase');
+    where.push('s.id = @showcase');
     params.showcase = filters.showcase;
   }
   if (filters.presenceStatus) {
@@ -44,6 +44,7 @@ function list(filters = {}) {
       pc.name LIKE @q OR pc.internal_code LIKE @q OR pc.registry_number LIKE @q
       OR pc.material LIKE @q OR pc.observations LIKE @q
       OR pc.exhibition_location LIKE @q OR pc.custodian LIKE @q OR pa.name LIKE @q
+      OR s.code LIKE @q OR s.name LIKE @q
       OR (pa.testament || ' P' || pa.number) LIKE @q
       OR (pa.testament || '-P' || pa.number) LIKE @q
     )`);
@@ -52,6 +53,8 @@ function list(filters = {}) {
 
   return db.prepare(`
     SELECT pc.*, pa.testament, pa.number AS passage_number, pa.name AS passage_name,
+      s.id AS assigned_showcase_id, s.code AS assigned_showcase_code,
+      s.name AS assigned_showcase_name,
       l.id AS active_loan_id,
       l.loaned_to_passage_id AS active_loan_passage_id,
       l.loaned_to AS active_loan_destination,
@@ -66,6 +69,8 @@ function list(filters = {}) {
       pick_dest.name AS active_pick_passage_name
     FROM pieces pc
     JOIN passages pa ON pa.id = pc.passage_id
+    LEFT JOIN showcase_passages sp ON sp.passage_id = pa.id
+    LEFT JOIN showcases s ON s.id = sp.showcase_id AND s.active = 1
     LEFT JOIN loans l ON l.piece_id = pc.id AND l.status = 'activo'
     LEFT JOIN passages loan_dest ON loan_dest.id = l.loaned_to_passage_id
     LEFT JOIN exhibition_picks ep
@@ -78,9 +83,13 @@ function list(filters = {}) {
 
 function findById(id) {
   return db.prepare(`
-    SELECT pc.*, pa.testament, pa.number AS passage_number, pa.name AS passage_name
+    SELECT pc.*, pa.testament, pa.number AS passage_number, pa.name AS passage_name,
+      s.id AS assigned_showcase_id, s.code AS assigned_showcase_code,
+      s.name AS assigned_showcase_name
     FROM pieces pc
     JOIN passages pa ON pa.id = pc.passage_id
+    LEFT JOIN showcase_passages sp ON sp.passage_id = pa.id
+    LEFT JOIN showcases s ON s.id = sp.showcase_id AND s.active = 1
     WHERE pc.id = ?
   `).get(id);
 }

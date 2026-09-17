@@ -1,0 +1,68 @@
+<section class="modal-backdrop" id="showcase-modal" aria-hidden="true">
+  <form class="modal-panel" id="showcase-form">
+    <header class="modal-header">
+      <div>
+        <p class="eyebrow">Ficha física</p>
+        <h2 id="showcase-form-title">Vitrina</h2>
+      </div>
+      <button class="button small" data-close-modal type="button">Cerrar</button>
+    </header>
+    <div class="modal-body">
+      <input id="showcase-id" name="id" type="hidden">
+      <label class="form-field">
+        <span>Código</span>
+        <input id="showcase-code" name="code" placeholder="Ej. VIT-046" required>
+      </label>
+      <label class="form-field">
+        <span>Nombre o alias</span>
+        <input id="showcase-name" name="name" placeholder="Ej. Vitrina principal" required>
+      </label>
+      <label class="form-field">
+        <span>Tipo de soporte</span>
+        <input id="showcase-support-type" name="support_type" value="Vitrina">
+      </label>
+      <label class="form-field">
+        <span>Forma</span>
+        <select id="showcase-shape" name="shape">
+          <option value="rectangular">Rectangular</option>
+          <option value="circular">Circular</option>
+          <option value="irregular">Irregular</option>
+          <option value="otro">Otra</option>
+        </select>
+      </label>
+      <label class="form-field">
+        <span>Ubicación</span>
+        <input id="showcase-location" name="location" placeholder="Sala o ubicación exacta">
+      </label>
+      <label class="form-field">
+        <span>Largo (cm)</span>
+        <input id="showcase-length" name="length_cm" type="number" min="0.1" step="0.1">
+      </label>
+      <label class="form-field">
+        <span>Ancho (cm)</span>
+        <input id="showcase-width" name="width_cm" type="number" min="0.1" step="0.1">
+      </label>
+      <label class="form-field">
+        <span>Alto (cm)</span>
+        <input id="showcase-height" name="height_cm" type="number" min="0.1" step="0.1">
+      </label>
+      <label class="form-field">
+        <span>Diámetro (cm)</span>
+        <input id="showcase-diameter" name="diameter_cm" type="number" min="0.1" step="0.1">
+      </label>
+      <label class="form-field full">
+        <span>Medida original / notas de medición</span>
+        <input id="showcase-measurement-notes" name="measurement_notes" placeholder="Ej. 1.20 x 0.90 x 1.70 m">
+      </label>
+      <label class="form-field full">
+        <span>Observaciones</span>
+        <textarea id="showcase-observations" name="observations"></textarea>
+      </label>
+      <p class="modal-status full" id="showcase-form-status" role="status"></p>
+    </div>
+    <footer class="modal-actions">
+      <button class="button" data-close-modal type="button">Cancelar</button>
+      <button class="button primary" type="submit">Guardar vitrina</button>
+    </footer>
+  </form>
+</section>

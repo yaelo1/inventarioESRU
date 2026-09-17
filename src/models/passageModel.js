@@ -2,16 +2,25 @@ const db = require('../config/database');
 
 function list() {
   return db.prepare(`
-    SELECT pa.*, COUNT(pc.id) AS pieces
+    SELECT pa.*, s.id AS showcase_id, s.code AS showcase_code,
+      s.name AS showcase_name, COUNT(pc.id) AS pieces
     FROM passages pa
     LEFT JOIN pieces pc ON pc.passage_id = pa.id AND pc.active = 1
+    LEFT JOIN showcase_passages sp ON sp.passage_id = pa.id
+    LEFT JOIN showcases s ON s.id = sp.showcase_id AND s.active = 1
     GROUP BY pa.id
     ORDER BY pa.testament, pa.number
   `).all();
 }
 
 function findById(id) {
-  return db.prepare('SELECT * FROM passages WHERE id = ?').get(id);
+  return db.prepare(`
+    SELECT pa.*, s.id AS showcase_id, s.code AS showcase_code, s.name AS showcase_name
+    FROM passages pa
+    LEFT JOIN showcase_passages sp ON sp.passage_id = pa.id
+    LEFT JOIN showcases s ON s.id = sp.showcase_id AND s.active = 1
+    WHERE pa.id = ?
+  `).get(id);
 }
 
 function findByTestamentAndNumber(testament, number) {

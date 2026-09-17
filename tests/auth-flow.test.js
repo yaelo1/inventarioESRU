@@ -148,6 +148,38 @@ test('sistema: el admin restablece una clave y vuelve a exigir el primer acceso'
   assert.equal(resetLogin.body.user.must_change_password, 1);
 });
 
+test('integración: un operador autorizado administra vitrinas y sus pasajes', async () => {
+  const adminLogin = await api('/auth/login', {
+    method: 'POST',
+    body: { email: admin.email, password: 'AdminInicial123' }
+  });
+  const passage = await api('/passages', {
+    method: 'POST',
+    cookie: adminLogin.cookie,
+    body: { testament: 'AT', number: 98, name: 'Pasaje para vitrina' }
+  });
+  assert.equal(passage.response.status, 201);
+
+  const showcase = await api('/showcases', {
+    method: 'POST',
+    cookie: adminLogin.cookie,
+    body: { code: 'VIT-098', name: 'Vitrina API', length_cm: 120, width_cm: 90 }
+  });
+  assert.equal(showcase.response.status, 201);
+
+  const assigned = await api(`/showcases/${showcase.body.id}/passages`, {
+    method: 'PUT',
+    cookie: adminLogin.cookie,
+    body: { passage_ids: [passage.body.id] }
+  });
+  assert.equal(assigned.response.status, 200);
+  assert.equal(assigned.body.passages[0].id, passage.body.id);
+
+  const catalog = await api('/showcases', { cookie: adminLogin.cookie });
+  assert.equal(catalog.response.status, 200);
+  assert.equal(catalog.body[0].code, 'VIT-098');
+});
+
 test('integración: desactivar un usuario revoca su sesión y bloquea su acceso', async () => {
   const adminLogin = await api('/auth/login', {
     method: 'POST',
@@ -229,6 +261,14 @@ test('regresión de permisos: consulta puede leer pero no modificar inventario',
   });
   const read = await api('/pieces', { cookie: viewerLogin.cookie });
   assert.equal(read.response.status, 200);
+  const showcaseRead = await api('/showcases', { cookie: viewerLogin.cookie });
+  assert.equal(showcaseRead.response.status, 200);
+  const showcaseWrite = await api('/showcases', {
+    method: 'POST',
+    cookie: viewerLogin.cookie,
+    body: { code: 'DENIED', name: 'No permitida' }
+  });
+  assert.equal(showcaseWrite.response.status, 403);
   const write = await api('/passages', {
     method: 'POST',
     cookie: viewerLogin.cookie,

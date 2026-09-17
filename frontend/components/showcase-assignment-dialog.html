@@ -1,0 +1,25 @@
+<section class="modal-backdrop" id="showcase-assignment-modal" aria-hidden="true">
+  <form class="modal-panel assignment-panel" id="showcase-assignment-form">
+    <header class="modal-header">
+      <div>
+        <p class="eyebrow">Asignación de pasajes</p>
+        <h2 id="showcase-assignment-title">Vitrina</h2>
+      </div>
+      <button class="button small" data-close-modal type="button">Cerrar</button>
+    </header>
+    <div class="assignment-body">
+      <input id="showcase-assignment-id" name="showcase_id" type="hidden">
+      <label class="form-field">
+        <span>Buscar pasaje</span>
+        <input id="showcase-passage-search" type="search" placeholder="Ej. AT P4 o Arca">
+      </label>
+      <p class="assignment-guidance">Marca los pasajes que estarán en esta vitrina. Desmarcar los actuales los deja sin vitrina.</p>
+      <div class="passage-assignment-list" id="showcase-passage-list"></div>
+      <p class="modal-status" id="showcase-assignment-status" role="status"></p>
+    </div>
+    <footer class="modal-actions">
+      <button class="button" data-close-modal type="button">Cancelar</button>
+      <button class="button primary" type="submit">Guardar asignación</button>
+    </footer>
+  </form>
+</section>

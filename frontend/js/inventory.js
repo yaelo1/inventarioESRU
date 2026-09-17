@@ -37,6 +37,11 @@ export function renderPassageInventory({
     imageButton.textContent = passage.image_path ? 'Cambiar foto' : 'Subir foto';
     node.querySelector('.passage-reference').textContent = `${passage.testament} · P${passage.number}`;
     node.querySelector('.passage-name').textContent = passage.name;
+    const showcaseLabel = node.querySelector('.passage-showcase');
+    showcaseLabel.textContent = passage.showcase_code
+      ? `${passage.showcase_code} · ${passage.showcase_name}`
+      : 'Sin vitrina asignada';
+    showcaseLabel.classList.toggle('is-unassigned', !passage.showcase_id);
     node.querySelector('.passage-count').textContent = groupPieces.length === passage.pieces
       ? `${passage.pieces} piezas`
       : `${groupPieces.length} coincidencias · ${passage.pieces} total`;
@@ -148,7 +153,9 @@ export function storageLocationFor(piece) {
 function displayLocationFor(piece, loaned) {
   const parts = [];
   if (loaned && piece.active_loan_destination) parts.push(`Pasaje destino: ${piece.active_loan_destination}`);
-  if (!loaned && piece.showcase) parts.push(`Vitrina ${piece.showcase}`);
+  if (!loaned && piece.assigned_showcase_code) {
+    parts.push(`${piece.assigned_showcase_code} · ${piece.assigned_showcase_name}`);
+  }
   if (piece.exhibition_location) parts.push(piece.exhibition_location);
   if (piece.custodian) parts.push(`Encargado: ${piece.custodian}`);
   if (parts.length) return parts.join(' / ');
