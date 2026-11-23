@@ -79,6 +79,22 @@ curl http://127.0.0.1:3000/api/health
 
 Comprueba también el acceso de un administrador y de una curadora, el campo Peso en una pieza y la pestaña Reportes de daños con sus descargas CSV y PDF.
 
+### Adopción con Docker Compose
+
+La SQLite recibida no debe reemplazar directamente la base activa ni agregarse a la imagen Docker. Con el servicio detenido, monta el archivo recibido como solo lectura y ejecuta:
+
+```bash
+docker compose down
+docker compose build
+docker compose run --rm \
+  -v /ruta/absoluta/inventario-recibido.sqlite:/incoming.sqlite:ro \
+  inventario npm run adopt-client-db -- /incoming.sqlite
+docker compose up -d
+docker compose ps
+```
+
+El comando usa `/data/inventario.sqlite` como destino, `/data/uploads` para recuperar fotografías anteriores y `/data/backups` para conservar el respaldo y el manifiesto. Antes de ejecutarlo deben existir `inventario.sqlite`, `frontend/uploads/` y `backups/`, todos con permisos de escritura para el usuario del contenedor.
+
 ## Catálogo de vitrinas
 
 La primera actualización que incluya el módulo `Vitrinas` debe importar el catálogo normalizado:

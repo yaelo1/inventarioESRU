@@ -2,10 +2,11 @@ const fs = require('fs');
 const path = require('path');
 const Database = require('better-sqlite3');
 const initDatabase = require('../src/database/init');
+const env = require('../src/config/env');
 
-const rootDir = path.resolve(__dirname, '..');
+const rootDir = env.rootDir;
 const sourceArg = process.argv[2];
-const destinationArg = process.argv[3] || 'inventario.sqlite';
+const destinationArg = process.argv[3];
 
 if (!sourceArg) {
   console.error('Uso: node scripts/adopt-client-database.js <sqlite-cliente> [sqlite-destino]');
@@ -13,8 +14,8 @@ if (!sourceArg) {
 }
 
 const sourcePath = path.resolve(rootDir, sourceArg);
-const destinationPath = path.resolve(rootDir, destinationArg);
-const backupDir = path.join(rootDir, 'backups');
+const destinationPath = destinationArg ? path.resolve(rootDir, destinationArg) : env.dbPath;
+const backupDir = path.resolve(rootDir, process.env.BACKUP_DIR || 'backups');
 const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
 const temporaryPath = `${destinationPath}.importing-${process.pid}`;
 const fields = ['image_path', 'thumbnail_path', 'original_image_path'];
@@ -127,8 +128,10 @@ function restoreRecord(db, table, record, fallback, deferredFiles, key) {
 }
 
 function publicFileExists(publicPath) {
-  const relative = String(publicPath).replace(/^\/+/, '');
-  return fs.existsSync(path.join(rootDir, 'frontend', relative));
+  const prefix = `${env.publicUploadBase}/`;
+  if (!String(publicPath).startsWith(prefix)) return false;
+  const relative = String(publicPath).slice(prefix.length);
+  return fs.existsSync(path.join(env.uploadDir, relative));
 }
 
 function assertHealthy(db, label) {

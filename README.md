@@ -197,6 +197,8 @@ docker compose up -d
 
 La guía operativa completa está en [DEPLOYMENT.md](DEPLOYMENT.md).
 
+Para actualizar un servidor que ya tiene una versión anterior funcionando, seguir [README_ACTUALIZACION.md](README_ACTUALIZACION.md).
+
 ## Seguridad
 
 - No publiques `.env`, `.env.production`, SQLite, respaldos ni fotografías.
