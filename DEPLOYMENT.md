@@ -4,7 +4,7 @@
 
 El servidor necesita el código del proyecto, `inventario.sqlite`, `frontend/uploads/` y un archivo `.env.production` creado a partir de `.env.production.example`. No se requiere `inventario_nacimiento_FAMMA_2_10_7_3.html` para ejecutar la aplicación ni debe ejecutarse el seed sobre la base en uso.
 
-La base y las imágenes forman una sola unidad de respaldo. Restaurar solo una de las dos puede dejar fichas sin fotografía o fotografías sin referencia.
+La base y las imágenes forman una sola unidad de respaldo. Restaurar solo una de las dos puede dejar fichas sin fotografía o fotografías sin referencia. La aplicación puede arrancar sin las imágenes nuevas, pero mostrará `Sin imagen` en las fichas cuyos archivos no estén disponibles.
 
 ## Preparación
 
@@ -51,6 +51,34 @@ npm test
 
 Puede ejecutarse otra vez: reutiliza las variantes ya generadas. No borres originales hasta validar el inventario y contar con un respaldo externo.
 
+## Adopción de una base modificada
+
+Con la aplicación detenida, coloca la SQLite recibida fuera de la ruta activa y ejecuta:
+
+```bash
+npm test
+npm run adopt-client-db -- ruta/a/base-recibida.sqlite
+```
+
+El proceso realiza estas acciones:
+
+1. Valida la integridad del archivo recibido sin modificarlo.
+2. Crea una copia operativa y aplica las migraciones del esquema.
+3. Conserva piezas, movimientos, préstamos, montajes, vitrinas y usuarios de la base recibida.
+4. Reutiliza imágenes anteriores únicamente cuando la nueva ruta apunta a un archivo ausente.
+5. Respalda la base anterior en `backups/` y genera `client-upload-manifest-*.json`.
+
+Si la carpeta `uploads` modificada todavía no está disponible, conserva ese manifiesto. Cada entrada contiene la ruta solicitada por la base recibida y la ruta temporal usada, si existe. Las fichas sin alternativa quedan operativas pero sin fotografía hasta completar la entrega.
+
+Después de la adopción ejecuta:
+
+```bash
+npm start
+curl http://127.0.0.1:3000/api/health
+```
+
+Comprueba también el acceso de un administrador y de una curadora, el campo Peso en una pieza y la pestaña Reportes de daños con sus descargas CSV y PDF.
+
 ## Catálogo de vitrinas
 
 La primera actualización que incluya el módulo `Vitrinas` debe importar el catálogo normalizado:
@@ -71,7 +99,7 @@ El proceso crea o actualiza las fichas físicas y asigna únicamente pasajes que
 ## Comprobación posterior
 
 1. Abre `/api/health`; debe responder `ok: true` y `database: ready`.
-2. Inicia sesión y confirma Inventario, Vitrinas, Montaje, Préstamos, Movimientos, Alertas y Usuarios.
+2. Inicia sesión y confirma Inventario, Vitrinas, Montaje, Préstamos, Movimientos, Alertas, Reportes de daños y Usuarios.
 3. Sube una imagen de prueba y verifica miniatura y ampliación.
 4. Registra y devuelve un préstamo de prueba, validando fechas, pasajes y conservación.
 5. Revisa espacio en disco, memoria y logs del proceso.

@@ -96,6 +96,46 @@ export function getShowcases() {
   return request('/showcases');
 }
 
+export function getDamageReports(filters = {}) {
+  return request(`/damage-reports?${damageReportParams(filters).toString()}`);
+}
+
+export function getDamageReport(id) {
+  return request(`/damage-reports/${id}`);
+}
+
+export function updateDamageReport(id, data) {
+  return request(`/damage-reports/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data)
+  });
+}
+
+export function downloadDamageReports(filters = {}) {
+  return downloadDamageReportFile('csv', filters);
+}
+
+export function downloadDamageReportsPdf(filters = {}) {
+  return downloadDamageReportFile('pdf', filters);
+}
+
+async function downloadDamageReportFile(format, filters) {
+  const response = await fetch(`${API_BASE}/damage-reports/export.${format}?${damageReportParams(filters)}`, {
+    credentials: 'same-origin'
+  });
+  if (response.status === 401) window.dispatchEvent(new CustomEvent('inventory:unauthorized'));
+  if (!response.ok) throw new Error(`No se pudo descargar el reporte ${format.toUpperCase()}`);
+  return response.blob();
+}
+
+function damageReportParams(filters) {
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') params.set(key, value);
+  });
+  return params;
+}
+
 export function createShowcase(showcase) {
   return request('/showcases', {
     method: 'POST',

@@ -9,7 +9,11 @@ import {
   createUser,
   deactivateUser,
   deleteUserPermanently,
+  downloadDamageReports,
+  downloadDamageReportsPdf,
   getCurrentUser,
+  getDamageReport,
+  getDamageReports,
   getCustodyAlerts,
   getExhibitionPicks,
   getPassages,
@@ -26,6 +30,7 @@ import {
   updateUserPassword,
   returnPieceLoan,
   updateExhibitionPickStatus,
+  updateDamageReport,
   updatePiece,
   updateShowcase,
   uploadPassageImage,
@@ -35,6 +40,7 @@ import { renderPassageInventory, renderPieceCards } from './inventory.js';
 import { formatSqliteTimestamp, renderLoans } from './loans.js';
 import { renderMounting } from './mounting.js';
 import { renderShowcases } from './showcases.js';
+import { renderDamageReports } from './damage-reports.js';
 
 const state = {
   currentUser: null,
@@ -45,6 +51,7 @@ const state = {
   exhibitionPicks: [],
   passages: [],
   showcases: [],
+  damageReports: [],
   passageExpansion: new Map()
 };
 
@@ -86,6 +93,17 @@ function cacheElements() {
     showcaseFilters: document.getElementById('showcase-filters'),
     showcaseSearch: document.getElementById('showcase-search'),
     showcaseAssignmentFilter: document.getElementById('showcase-assignment-filter'),
+    damageReportList: document.getElementById('damage-report-list'),
+    damageReportTemplate: document.getElementById('damage-report-template'),
+    damageReportFilters: document.getElementById('damage-report-filters'),
+    damageSearch: document.getElementById('damage-search'),
+    damageStatusFilter: document.getElementById('damage-status-filter'),
+    damageConditionFilter: document.getElementById('damage-condition-filter'),
+    damagePassageFilter: document.getElementById('damage-passage-filter'),
+    damageDateFrom: document.getElementById('damage-date-from'),
+    damageDateTo: document.getElementById('damage-date-to'),
+    damageCsvExportButton: document.getElementById('damage-csv-export-button'),
+    damagePdfExportButton: document.getElementById('damage-pdf-export-button'),
     newShowcaseButton: document.getElementById('new-showcase-button'),
     mountingPassageFilter: document.getElementById('mounting-passage-filter'),
     mountingStatusFilter: document.getElementById('mounting-status-filter'),
@@ -142,6 +160,11 @@ function bindEvents() {
   els.showcaseGrid.addEventListener('click', handleShowcaseAction);
   els.showcaseSearch.addEventListener('input', debounce(renderShowcaseCatalog, 180));
   els.showcaseFilters.addEventListener('change', renderShowcaseCatalog);
+  els.damageReportFilters.addEventListener('change', loadDamageReports);
+  els.damageSearch.addEventListener('input', debounce(loadDamageReports, 250));
+  els.damageReportList.addEventListener('click', handleDamageReportAction);
+  els.damageCsvExportButton.addEventListener('click', exportDamageReports);
+  els.damagePdfExportButton.addEventListener('click', exportDamageReportsPdf);
   els.newShowcaseButton.addEventListener('click', () => openShowcaseModal());
   els.mountingPassageFilter.addEventListener('change', loadExhibitionPicks);
   els.mountingStatusFilter.addEventListener('change', loadExhibitionPicks);
@@ -213,7 +236,7 @@ async function enterApplication(user, { restoreView = false } = {}) {
   state.currentUser = user;
   document.body.classList.add('is-authenticated');
   document.body.classList.toggle('is-admin', user.role === 'admin');
-  document.body.classList.toggle('is-readonly', user.role === 'consulta');
+  document.body.classList.toggle('is-readonly', ['consulta', 'curadora'].includes(user.role));
   const savedView = restoreView ? sessionStorage.getItem(ACTIVE_VIEW_KEY) : null;
   activateView(savedView || 'inventory');
   if (user.must_change_password) {
@@ -302,7 +325,8 @@ async function loadComponents() {
     fetchComponent('/frontend/components/return-loan-dialog.html'),
     fetchComponent('/frontend/components/exhibition-pick-dialog.html'),
     fetchComponent('/frontend/components/showcase-form.html'),
-    fetchComponent('/frontend/components/showcase-assignment-dialog.html')
+    fetchComponent('/frontend/components/showcase-assignment-dialog.html'),
+    fetchComponent('/frontend/components/damage-report-dialog.html')
   ]);
   els.componentRoot.innerHTML = fragments.join('');
 
@@ -328,6 +352,10 @@ async function loadComponents() {
   els.showcaseAssignmentStatus = document.getElementById('showcase-assignment-status');
   els.showcasePassageSearch = document.getElementById('showcase-passage-search');
   els.showcasePassageList = document.getElementById('showcase-passage-list');
+  els.damageReportModal = document.getElementById('damage-report-modal');
+  els.damageReportForm = document.getElementById('damage-report-form');
+  els.damageReportFormStatus = document.getElementById('damage-report-form-status');
+  els.damageReportTimeline = document.getElementById('damage-report-timeline');
 
   els.pieceModal.addEventListener('click', closeOnBackdrop);
   els.passageModal.addEventListener('click', closeOnBackdrop);
@@ -336,6 +364,7 @@ async function loadComponents() {
   els.returnLoanModal.addEventListener('click', closeOnBackdrop);
   els.showcaseModal.addEventListener('click', closeOnBackdrop);
   els.showcaseAssignmentModal.addEventListener('click', closeOnBackdrop);
+  els.damageReportModal.addEventListener('click', closeOnBackdrop);
   els.pieceForm.addEventListener('submit', savePiece);
   els.passageForm.addEventListener('submit', savePassage);
   els.conditionForm.addEventListener('submit', saveCondition);
@@ -344,6 +373,8 @@ async function loadComponents() {
   els.returnLoanForm.addEventListener('submit', saveReturnLoan);
   els.showcaseForm.addEventListener('submit', saveShowcase);
   els.showcaseAssignmentForm.addEventListener('submit', saveShowcaseAssignments);
+  els.damageReportForm.addEventListener('submit', saveDamageReport);
+  document.getElementById('damage-report-status').addEventListener('change', updateDamageResolutionFields);
   els.showcasePassageSearch.addEventListener('input', filterPassageAssignments);
   document.querySelectorAll('[data-close-modal]').forEach((button) => {
     button.addEventListener('click', closeModals);
@@ -358,11 +389,11 @@ async function fetchComponent(path) {
 
 async function refreshAll() {
   await Promise.all([loadPassages(), loadShowcases()]);
-  await Promise.all([loadStats(), loadPieces(), loadAlerts(), loadMovements(), loadLoans(), loadExhibitionPicks()]);
+  await Promise.all([loadStats(), loadPieces(), loadAlerts(), loadMovements(), loadLoans(), loadExhibitionPicks(), loadDamageReports()]);
 }
 
 async function refreshOperationalData() {
-  await Promise.all([loadStats(), loadPieces(), loadAlerts(), loadMovements(), loadLoans(), loadExhibitionPicks()]);
+  await Promise.all([loadStats(), loadPieces(), loadAlerts(), loadMovements(), loadLoans(), loadExhibitionPicks(), loadDamageReports()]);
 }
 
 async function loadStats() {
@@ -378,6 +409,7 @@ async function loadPassages() {
   populatePassageFilter(state.passages);
   populateMountingPassageFilter(state.passages);
   populateLoanPassageFilters(state.passages);
+  populateDamagePassageFilter(state.passages);
 }
 
 let pieceRequestSequence = 0;
@@ -403,6 +435,17 @@ async function loadShowcases() {
 async function loadAlerts() {
   state.alerts = await getCustodyAlerts();
   renderPieceCards(els.alertsGrid, state.alerts, els.pieceTemplate, labelFor);
+}
+
+async function loadDamageReports() {
+  state.damageReports = await getDamageReports(getDamageReportFilterValues());
+  renderDamageReports({
+    container: els.damageReportList,
+    template: els.damageReportTemplate,
+    reports: state.damageReports,
+    labelFor,
+    formatDate: formatSqliteTimestamp
+  });
 }
 
 async function loadMovements() {
@@ -553,6 +596,7 @@ async function refreshActiveView() {
   }
   if (view === 'movements') await Promise.all([loadStats(), loadMovements()]);
   if (view === 'alerts') await Promise.all([loadStats(), loadAlerts()]);
+  if (view === 'damageReports') await Promise.all([loadStats(), loadDamageReports()]);
   if (view === 'users') await Promise.all([loadStats(), loadUsers()]);
 }
 
@@ -594,6 +638,18 @@ function handleShowcaseAction(event) {
   if (!showcase) return;
   if (button.dataset.action === 'edit-showcase') openShowcaseModal(showcase);
   if (button.dataset.action === 'assign-passages') openShowcaseAssignment(showcase);
+}
+
+async function handleDamageReportAction(event) {
+  const button = event.target.closest('[data-action="damage-follow-up"]');
+  const row = button?.closest('[data-damage-report-id]');
+  if (!button || !row) return;
+  try {
+    const report = await getDamageReport(row.dataset.damageReportId);
+    openDamageReportModal(report);
+  } catch (error) {
+    setStatus(error.message, true);
+  }
 }
 
 async function handleMountingAction(event) {
@@ -741,7 +797,7 @@ function renderUsers() {
 }
 
 function handleImageViewerClick(event) {
-  const image = event.target.closest('.piece-image, .mounting-image, .mounting-passage-photo img, .passage-photo img, .loan-image, .loan-passage-photo img');
+  const image = event.target.closest('.piece-image, .mounting-image, .mounting-passage-photo img, .passage-photo img, .loan-image, .loan-passage-photo img, .damage-report-image');
   if (image?.src) {
     openImageViewer(image.dataset.fullImage || image.src, image.alt);
     return;
@@ -790,6 +846,9 @@ function openPieceModal(piece) {
   setFormValue('deep', piece?.deep || '');
   setFormValue('length', piece?.length || '');
   setFormValue('height', piece?.height || '');
+  const weightInput = weightInputFor(piece?.weight_grams);
+  setFormValue('weight_value', weightInput.value);
+  setFormValue('weight_unit', weightInput.unit);
   setFormValue('observations', piece?.observations || '');
   openModal(els.pieceModal);
 }
@@ -847,6 +906,48 @@ function openShowcaseAssignment(showcase) {
   openModal(els.showcaseAssignmentModal);
 }
 
+function openDamageReportModal(report) {
+  els.damageReportForm.reset();
+  setFormValue('damage-report-id', report.id);
+  setFormValue('damage-report-status', report.status);
+  setFormValue('damage-report-responsible', report.responsible || '');
+  setFormValue('damage-resolved-condition', 'bueno');
+  document.getElementById('damage-report-title').textContent = `${report.internal_code} · ${report.piece_name}`;
+  setModalStatus(els.damageReportFormStatus, '');
+  els.damageReportTimeline.innerHTML = '';
+  if (!report.timeline.length) {
+    els.damageReportTimeline.innerHTML = '<p class="empty-state">Sin movimientos registrados en este expediente.</p>';
+  } else {
+    report.timeline.forEach((movement) => {
+      const item = document.createElement('article');
+      item.className = 'damage-timeline-item';
+      const transition = document.createElement('strong');
+      transition.textContent = `${labelFor(movement.from_condition_status) || '-'} → ${labelFor(movement.to_condition_status) || '-'}`;
+      const detail = document.createElement('span');
+      detail.textContent = [movement.responsible, movement.reason].filter(Boolean).join(' · ') || 'Actualización de conservación';
+      const date = document.createElement('time');
+      date.textContent = formatSqliteTimestamp(movement.created_at);
+      item.append(transition, detail, date);
+      els.damageReportTimeline.appendChild(item);
+    });
+  }
+  const readOnly = state.currentUser?.role === 'consulta' || report.status === 'resuelto';
+  els.damageReportForm.querySelectorAll('select, textarea, input:not([type="hidden"])').forEach((field) => {
+    field.disabled = readOnly;
+  });
+  els.damageReportForm.querySelector('button[type="submit"]').hidden = readOnly;
+  updateDamageResolutionFields();
+  openModal(els.damageReportModal);
+}
+
+function updateDamageResolutionFields() {
+  const resolved = document.getElementById('damage-report-status').value === 'resuelto';
+  const field = els.damageReportForm.querySelector('.damage-resolution-field');
+  field.hidden = !resolved;
+  document.getElementById('damage-resolved-condition').required = resolved;
+  document.getElementById('damage-report-note').required = resolved;
+}
+
 function renderPassageAssignments(showcase) {
   els.showcasePassageList.innerHTML = '';
   state.passages.forEach((passage) => {
@@ -893,6 +994,17 @@ function getMovementFilterValues() {
   return {
     dateFrom: document.getElementById('movement-date-from').value,
     dateTo: document.getElementById('movement-date-to').value
+  };
+}
+
+function getDamageReportFilterValues() {
+  return {
+    q: els.damageSearch.value.trim(),
+    status: els.damageStatusFilter.value,
+    conditionStatus: els.damageConditionFilter.value,
+    passageId: els.damagePassageFilter.value,
+    dateFrom: els.damageDateFrom.value,
+    dateTo: els.damageDateTo.value
   };
 }
 
@@ -1011,6 +1123,64 @@ async function saveShowcaseAssignments(event) {
   } finally {
     submitButton.disabled = false;
   }
+}
+
+async function saveDamageReport(event) {
+  event.preventDefault();
+  const data = Object.fromEntries(new FormData(els.damageReportForm));
+  const submitButton = els.damageReportForm.querySelector('button[type="submit"]');
+  try {
+    submitButton.disabled = true;
+    setModalStatus(els.damageReportFormStatus, 'Guardando seguimiento...');
+    await updateDamageReport(data.id, {
+      status: data.status,
+      responsible: data.responsible,
+      note: data.note,
+      resolved_condition: data.resolved_condition
+    });
+    closeModals();
+    await refreshOperationalData();
+    setStatus('Seguimiento de daño actualizado.');
+  } catch (error) {
+    setModalStatus(els.damageReportFormStatus, error.message, true);
+  } finally {
+    submitButton.disabled = false;
+  }
+}
+
+async function exportDamageReports() {
+  try {
+    const blob = await downloadDamageReports(getDamageReportFilterValues());
+    downloadBlob(blob, `reportes-danos-${new Date().toISOString().slice(0, 10)}.csv`);
+    setStatus('Reporte descargado.');
+  } catch (error) {
+    setStatus(error.message, true);
+  }
+}
+
+async function exportDamageReportsPdf() {
+  try {
+    els.damagePdfExportButton.disabled = true;
+    setStatus('Preparando reporte PDF con imágenes...');
+    const blob = await downloadDamageReportsPdf(getDamageReportFilterValues());
+    downloadBlob(blob, `reportes-danos-${new Date().toISOString().slice(0, 10)}.pdf`);
+    setStatus('Reporte PDF descargado.');
+  } catch (error) {
+    setStatus(error.message, true);
+  } finally {
+    els.damagePdfExportButton.disabled = false;
+  }
+}
+
+function downloadBlob(blob, filename) {
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  const objectUrl = link.href;
+  link.remove();
+  URL.revokeObjectURL(objectUrl);
 }
 
 async function saveCondition(event) {
@@ -1177,8 +1347,18 @@ function piecePayload(formData) {
     deep: data.deep.trim(),
     length: data.length.trim(),
     height: data.height.trim(),
+    weight_grams: data.weight_value
+      ? Number(data.weight_value) * (data.weight_unit === 'kg' ? 1000 : 1)
+      : null,
     observations: data.observations.trim()
   };
+}
+
+function weightInputFor(weightGrams) {
+  const grams = Number(weightGrams);
+  if (!Number.isFinite(grams) || grams <= 0) return { value: '', unit: 'g' };
+  if (grams >= 1000) return { value: grams / 1000, unit: 'kg' };
+  return { value: grams, unit: 'g' };
 }
 
 function findPiece(id) {
@@ -1310,9 +1490,13 @@ function labelFor(value) {
     montada: 'Montada',
     finalizada: 'Finalizada',
     cancelada: 'Cancelada',
+    abierto: 'Pendiente',
+    en_restauracion: 'En restauración',
+    resuelto: 'Resuelto',
     no_seleccionada: 'No seleccionada',
     admin: 'Admin',
     operador: 'Operador',
+    curadora: 'Curadora',
     consulta: 'Consulta'
   }[value] || value;
 }
@@ -1353,6 +1537,20 @@ function populateMountingPassageFilter(passages) {
 function populateLoanPassageFilters(passages) {
   populateLoanPassageSelect(els.loanOriginFilter, passages);
   populateLoanPassageSelect(els.loanDestinationFilter, passages);
+}
+
+function populateDamagePassageFilter(passages) {
+  const current = els.damagePassageFilter.value;
+  els.damagePassageFilter.innerHTML = '<option value="">Todos</option>';
+  passages.forEach((passage) => {
+    const option = document.createElement('option');
+    option.value = passage.id;
+    option.textContent = `${passage.testament} P${passage.number} · ${passage.name}`;
+    els.damagePassageFilter.appendChild(option);
+  });
+  if ([...els.damagePassageFilter.options].some((option) => option.value === current)) {
+    els.damagePassageFilter.value = current;
+  }
 }
 
 function populateLoanPassageSelect(select, passages) {

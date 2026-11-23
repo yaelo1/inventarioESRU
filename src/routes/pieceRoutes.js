@@ -39,11 +39,15 @@ router.put('/:id', requireRole('admin', 'operador'), (req, res, next) => {
 });
 
 router.patch('/:id/status', requireRole('admin', 'operador'), (req, res, next) => {
-  try { res.json(pieceService.changeStatus(req.params.id, req.body)); } catch (error) { next(error); }
+  try {
+    res.json(pieceService.changeStatus(req.params.id, { ...req.body, actor_user_id: req.user.id }));
+  } catch (error) { next(error); }
 });
 
 router.post('/:id/movements', requireRole('admin', 'operador'), (req, res, next) => {
-  try { res.status(201).json(pieceService.registerMovement(req.params.id, req.body)); } catch (error) { next(error); }
+  try {
+    res.status(201).json(pieceService.registerMovement(req.params.id, { ...req.body, actor_user_id: req.user.id }));
+  } catch (error) { next(error); }
 });
 
 router.post('/:id/image', requireRole('admin', 'operador'), upload.single('image'), async (req, res, next) => {

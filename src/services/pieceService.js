@@ -5,6 +5,7 @@ const movementModel = require('../models/pieceMovementModel');
 const loanModel = require('../models/loanModel');
 const passageModel = require('../models/passageModel');
 const exhibitionPickModel = require('../models/exhibitionPickModel');
+const damageReportModel = require('../models/damageReportModel');
 
 const presenceStatuses = ['en_caja', 'en_vitrina', 'prestada', 'en_mantenimiento', 'sin_confirmar'];
 const conditionStatuses = ['bueno', 'regular', 'roto', 'requiere_mantenimiento', 'en_mantenimiento', 'sin_revisar'];
@@ -121,6 +122,15 @@ function validatePiece(body, partial = false) {
     if (body[key] !== undefined) data[key] = body[key] === null ? null : String(body[key]).trim();
   }
 
+  if (body.weight_grams !== undefined) {
+    if (body.weight_grams === null || body.weight_grams === '') data.weight_grams = null;
+    else {
+      const weight = Number(body.weight_grams);
+      if (!Number.isFinite(weight) || weight <= 0) errors.push('weight_grams debe ser un número mayor a 0');
+      else data.weight_grams = weight;
+    }
+  }
+
   if (!partial && data.artist === undefined) data.artist = env.defaultArtist;
   if (!partial) {
     data.presence_status = 'sin_confirmar';
@@ -221,7 +231,14 @@ function changeStatus(id, body) {
       counterparty: body.counterparty ? String(body.counterparty).trim() : null,
       reason: body.reason ? String(body.reason).trim() : null
     });
-    return { piece: updated, movement };
+    const damageReport = damageReportModel.syncCondition({
+      piece: updated,
+      conditionStatus: updated.condition_status,
+      responsible: body.responsible,
+      reason: body.reason,
+      userId: body.actor_user_id
+    });
+    return { piece: updated, movement, damage_report: damageReport };
   });
 
   return tx();
@@ -240,7 +257,8 @@ function registerMovement(id, body) {
     condition_status: nextCondition,
     responsible: body.responsible,
     counterparty: body.counterparty,
-    reason: body.reason
+    reason: body.reason,
+    actor_user_id: body.actor_user_id
   });
 }
 

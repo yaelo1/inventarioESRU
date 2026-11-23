@@ -65,6 +65,16 @@
         <span>Alto</span>
         <input id="height" name="height">
       </label>
+      <label class="form-field">
+        <span>Peso</span>
+        <span class="measurement-input">
+          <input id="weight_value" name="weight_value" type="number" min="0.01" step="0.01" inputmode="decimal">
+          <select id="weight_unit" name="weight_unit" aria-label="Unidad de peso">
+            <option value="g">g</option>
+            <option value="kg">kg</option>
+          </select>
+        </span>
+      </label>
       <label class="form-field full">
         <span>Observaciones internas</span>
         <textarea id="observations" name="observations"></textarea>

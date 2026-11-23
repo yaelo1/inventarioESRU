@@ -1,0 +1,46 @@
+<section class="modal-backdrop" id="damage-report-modal" aria-hidden="true">
+  <form class="modal-panel compact" id="damage-report-form">
+    <header class="modal-header">
+      <div>
+        <p class="eyebrow">Expediente de conservación</p>
+        <h2 id="damage-report-title">Reporte de daño</h2>
+      </div>
+      <button class="button small" data-close-modal type="button">Cerrar</button>
+    </header>
+    <div class="modal-body">
+      <input id="damage-report-id" name="id" type="hidden">
+      <label class="form-field">
+        <span>Estado del reporte</span>
+        <select id="damage-report-status" name="status" required>
+          <option value="abierto">Pendiente</option>
+          <option value="en_restauracion">En restauración</option>
+          <option value="resuelto">Resuelto</option>
+        </select>
+      </label>
+      <label class="form-field">
+        <span>Responsable</span>
+        <input id="damage-report-responsible" name="responsible">
+      </label>
+      <label class="form-field full damage-resolution-field" hidden>
+        <span>Conservación final</span>
+        <select id="damage-resolved-condition" name="resolved_condition">
+          <option value="bueno">Bueno</option>
+          <option value="regular">Regular</option>
+        </select>
+      </label>
+      <label class="form-field full">
+        <span>Nota de seguimiento</span>
+        <textarea id="damage-report-note" name="note" placeholder="Trabajo realizado, diagnóstico o acuerdo de seguimiento"></textarea>
+      </label>
+      <div class="damage-report-history full">
+        <strong>Historial del expediente</strong>
+        <div id="damage-report-timeline"></div>
+      </div>
+      <p class="modal-status full" id="damage-report-form-status" role="status"></p>
+    </div>
+    <footer class="modal-actions">
+      <button class="button" data-close-modal type="button">Cancelar</button>
+      <button class="button primary" type="submit">Guardar seguimiento</button>
+    </footer>
+  </form>
+</section>

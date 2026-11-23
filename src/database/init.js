@@ -13,20 +13,119 @@ function initDatabase(db) {
   ensureColumn(db, 'pieces', 'thumbnail_path', 'TEXT');
   ensureColumn(db, 'pieces', 'original_image_path', 'TEXT');
   ensureColumn(db, 'pieces', 'never_leaves_box', 'INTEGER NOT NULL DEFAULT 0');
+  ensureColumn(db, 'pieces', 'weight_grams', 'REAL');
   ensureColumn(db, 'loans', 'loaned_to_passage_id', 'INTEGER');
   ensureColumn(db, 'loans', 'return_notes', 'TEXT');
   // Existing accounts predate temporary passwords, so they keep their current access.
   ensureColumn(db, 'users', 'must_change_password', 'INTEGER NOT NULL DEFAULT 0');
   ensureColumn(db, 'piece_images', 'thumbnail_path', 'TEXT');
+  migrateUserRoles(db);
   migrateLoansForeignKey(db);
   migrateExhibitionPickStatuses(db);
   consolidateLegacyPieceFields(db);
   reconcileActiveCustody(db);
+  consolidateDamageReportStatuses(db);
+  backfillDamageReports(db);
   db.exec(`
     CREATE UNIQUE INDEX IF NOT EXISTS idx_loans_active_piece
       ON loans(piece_id) WHERE status = 'activo';
   `);
   removeLegacyCommerceTables(db);
+}
+
+function consolidateDamageReportStatuses(db) {
+  db.prepare(`
+    UPDATE damage_reports
+    SET status = 'abierto', updated_at = CURRENT_TIMESTAMP
+    WHERE status = 'en_revision'
+  `).run();
+}
+
+function migrateUserRoles(db) {
+  const table = db.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'users'").get();
+  if (!table || table.sql.includes("'curadora'")) return;
+
+  db.pragma('foreign_keys = OFF');
+  try {
+    db.transaction(() => {
+      db.exec(`
+        CREATE TABLE users_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          email TEXT NOT NULL UNIQUE,
+          password_hash TEXT NOT NULL,
+          role TEXT NOT NULL DEFAULT 'operador'
+            CHECK (role IN ('admin', 'operador', 'curadora', 'consulta')),
+          active INTEGER NOT NULL DEFAULT 1 CHECK (active IN (0, 1)),
+          must_change_password INTEGER NOT NULL DEFAULT 0 CHECK (must_change_password IN (0, 1)),
+          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        INSERT INTO users_new (
+          id, name, email, password_hash, role, active, must_change_password, created_at, updated_at
+        )
+        SELECT id, name, email, password_hash, role, active, must_change_password, created_at, updated_at
+        FROM users;
+        DROP TABLE users;
+        ALTER TABLE users_new RENAME TO users;
+      `);
+    })();
+  } finally {
+    db.pragma('foreign_keys = ON');
+  }
+  const foreignKeyErrors = db.pragma('foreign_key_check');
+  if (foreignKeyErrors.length) throw new Error('La migración del rol curadora dañó referencias de usuarios');
+}
+
+function backfillDamageReports(db) {
+  db.exec(`
+    INSERT INTO damage_reports (
+      piece_id, status, initial_condition_status, description, responsible, opened_at
+    )
+    SELECT
+      p.id,
+      CASE WHEN p.condition_status = 'en_mantenimiento' THEN 'en_restauracion' ELSE 'abierto' END,
+      p.condition_status,
+      COALESCE(
+        (
+          SELECT NULLIF(TRIM(pm.reason), '')
+          FROM piece_movements pm
+          WHERE pm.piece_id = p.id
+            AND pm.to_condition_status IN ('roto', 'requiere_mantenimiento', 'en_mantenimiento')
+            AND NULLIF(TRIM(pm.reason), '') IS NOT NULL
+          ORDER BY pm.created_at DESC, pm.id DESC
+          LIMIT 1
+        ),
+        NULLIF(TRIM(p.observations), ''),
+        'Migrado desde el estado de conservación de la pieza'
+      ),
+      (
+        SELECT NULLIF(TRIM(pm.responsible), '')
+        FROM piece_movements pm
+        WHERE pm.piece_id = p.id AND NULLIF(TRIM(pm.responsible), '') IS NOT NULL
+        ORDER BY pm.created_at DESC, pm.id DESC
+        LIMIT 1
+      ),
+      COALESCE(
+        (
+          SELECT pm.created_at
+          FROM piece_movements pm
+          WHERE pm.piece_id = p.id
+            AND pm.to_condition_status IN ('roto', 'requiere_mantenimiento', 'en_mantenimiento')
+          ORDER BY pm.created_at DESC, pm.id DESC
+          LIMIT 1
+        ),
+        p.updated_at,
+        CURRENT_TIMESTAMP
+      )
+    FROM pieces p
+    WHERE p.active = 1
+      AND p.condition_status IN ('roto', 'requiere_mantenimiento', 'en_mantenimiento')
+      AND NOT EXISTS (
+        SELECT 1 FROM damage_reports dr
+        WHERE dr.piece_id = p.id AND dr.status != 'resuelto'
+      );
+  `);
 }
 
 function ensureColumn(db, table, column, definition) {

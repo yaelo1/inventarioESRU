@@ -8,13 +8,17 @@ Sistema web interno para la custodia y operación del inventario de piezas de la
 - Búsqueda por pieza, código, registro y pasaje.
 - Estados de presencia: en caja, en vitrina, prestada y en restauración.
 - Conservación y alertas de restauración.
+- Peso de cada pieza, capturable en gramos o kilogramos y almacenado en gramos.
+- Expedientes de piezas dañadas con filtros, seguimiento, historial y descarga CSV o PDF ilustrado.
 - Preparación, salida, montaje y desmontaje de exhibiciones.
 - Préstamos exclusivamente entre pasajes, con fechas previstas y reales de devolución.
 - Historial de movimientos y responsables.
 - Fotografías de piezas y pasajes con miniaturas optimizadas.
 - Catálogo independiente de vitrinas, medidas y ubicación física.
 - Asignación de uno o varios pasajes por vitrina, con un máximo de una vitrina por pasaje.
-- Usuarios con roles, contraseña temporal y cambio obligatorio en el primer acceso.
+- Usuarios con roles de administración, operación, curaduría y consulta.
+- El rol de curaduría puede dar seguimiento a daños sin editar el inventario general.
+- Contraseña temporal y cambio obligatorio en el primer acceso.
 - Administración, desactivación, reactivación y eliminación de cuentas.
 
 ## Tecnologías
@@ -118,7 +122,19 @@ En producción es obligatorio reemplazar `SESSION_SECRET` por un valor aleatorio
 npm test
 ```
 
-La suite cubre autenticación, permisos, contraseñas temporales, préstamos, montaje, devolución, restauración y procesamiento de imágenes. Las pruebas usan bases temporales y no modifican `inventario.sqlite`.
+La suite cubre autenticación, permisos, contraseñas temporales, peso, reportes de daño, préstamos, montaje, devolución, restauración y procesamiento de imágenes. Las pruebas usan bases temporales y no modifican `inventario.sqlite`.
+
+## Recibir una base modificada
+
+Antes de sustituir la base en uso, detén la aplicación y ejecuta:
+
+```bash
+npm run adopt-client-db -- ruta/a/base-modificada.sqlite
+```
+
+El comando conserva intacto el archivo recibido, respalda la base anterior, aplica las migraciones actuales y adopta el resultado como `inventario.sqlite`. Si una imagen referenciada por la base recibida todavía no fue entregada, reutiliza la ruta anterior cuando el archivo existe y genera un manifiesto en `backups/client-upload-manifest-*.json`.
+
+La ausencia de `uploads` no impide migrar los datos, pero las fichas sin archivo disponible mostrarán `Sin imagen`. Cuando se reciban las fotografías faltantes deben restaurarse junto con las rutas anotadas en el manifiesto; no se deben inventar ni renombrar archivos a mano.
 
 ## Despliegue con Docker
 

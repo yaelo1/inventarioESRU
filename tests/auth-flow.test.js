@@ -277,6 +277,77 @@ test('regresión de permisos: consulta puede leer pero no modificar inventario',
   assert.equal(write.response.status, 403);
 });
 
+test('integración de permisos: curadora da seguimiento a daños sin editar el inventario', async () => {
+  const curator = userService.createUser({
+    name: 'Curadora',
+    email: 'curadora@example.test',
+    password: 'CuradoraSegura123',
+    role: 'curadora'
+  }, { mustChangePassword: false });
+  const adminLogin = await api('/auth/login', {
+    method: 'POST',
+    body: { email: admin.email, password: 'AdminInicial123' }
+  });
+  const passage = await api('/passages', {
+    method: 'POST',
+    cookie: adminLogin.cookie,
+    body: { testament: 'AT', number: 97, name: 'Pasaje con reporte' }
+  });
+  const piece = await api('/pieces', {
+    method: 'POST',
+    cookie: adminLogin.cookie,
+    body: {
+      passage_id: passage.body.id,
+      internal_code: 'API-DAMAGE-001',
+      name: 'Pieza de reporte',
+      weight_grams: 950
+    }
+  });
+  const damage = await api(`/pieces/${piece.body.id}/status`, {
+    method: 'PATCH',
+    cookie: adminLogin.cookie,
+    body: { condition_status: 'roto', reason: 'Daño de prueba' }
+  });
+  assert.equal(damage.response.status, 200);
+
+  const curatorLogin = await api('/auth/login', {
+    method: 'POST',
+    body: { email: curator.email, password: 'CuradoraSegura123' }
+  });
+  const reports = await api('/damage-reports', { cookie: curatorLogin.cookie });
+  assert.equal(reports.response.status, 200);
+  assert.equal(reports.body.some((report) => report.internal_code === 'API-DAMAGE-001'), true);
+
+  const followUp = await api(`/damage-reports/${damage.body.damage_report.id}`, {
+    method: 'PATCH',
+    cookie: curatorLogin.cookie,
+    body: { status: 'abierto', responsible: 'Curadora', note: 'Diagnóstico pendiente' }
+  });
+  assert.equal(followUp.response.status, 200);
+  assert.equal(followUp.body.status, 'abierto');
+
+  const pdfResponse = await fetch(`${baseUrl}/damage-reports/export.pdf?status=activos`, {
+    headers: { Cookie: curatorLogin.cookie }
+  });
+  assert.equal(pdfResponse.status, 200);
+  assert.equal(pdfResponse.headers.get('content-type'), 'application/pdf');
+  const pdf = Buffer.from(await pdfResponse.arrayBuffer());
+  assert.equal(pdf.subarray(0, 5).toString(), '%PDF-');
+
+  const deniedPiece = await api(`/pieces/${piece.body.id}`, {
+    method: 'PUT',
+    cookie: curatorLogin.cookie,
+    body: { weight_grams: 1000 }
+  });
+  assert.equal(deniedPiece.response.status, 403);
+  const deniedPassage = await api('/passages', {
+    method: 'POST',
+    cookie: curatorLogin.cookie,
+    body: { testament: 'AT', number: 96, name: 'No autorizado' }
+  });
+  assert.equal(deniedPassage.response.status, 403);
+});
+
 async function api(route, options = {}) {
   const headers = {};
   if (options.body) headers['Content-Type'] = 'application/json';

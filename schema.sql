@@ -76,6 +76,7 @@ CREATE TABLE IF NOT EXISTS pieces (
   deep TEXT,
   length TEXT,
   height TEXT,
+  weight_grams REAL CHECK (weight_grams IS NULL OR weight_grams > 0),
   observations TEXT,
   loan_notes TEXT,
   is_loan_related INTEGER NOT NULL DEFAULT 0 CHECK (is_loan_related IN (0, 1)),
@@ -102,6 +103,24 @@ CREATE TABLE IF NOT EXISTS piece_movements (
   reason TEXT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (piece_id) REFERENCES pieces(id) ON DELETE RESTRICT
+);
+
+CREATE TABLE IF NOT EXISTS damage_reports (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  piece_id INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'abierto'
+    CHECK (status IN ('abierto', 'en_revision', 'en_restauracion', 'resuelto')),
+  initial_condition_status TEXT NOT NULL,
+  description TEXT NOT NULL,
+  responsible TEXT,
+  reported_by_user_id INTEGER,
+  opened_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  resolved_at TEXT,
+  resolution_notes TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (piece_id) REFERENCES pieces(id) ON DELETE RESTRICT,
+  FOREIGN KEY (reported_by_user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS loans (
@@ -164,7 +183,7 @@ CREATE TABLE IF NOT EXISTS users (
   name TEXT NOT NULL,
   email TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
-  role TEXT NOT NULL DEFAULT 'operador' CHECK (role IN ('admin', 'operador', 'consulta')),
+  role TEXT NOT NULL DEFAULT 'operador' CHECK (role IN ('admin', 'operador', 'curadora', 'consulta')),
   active INTEGER NOT NULL DEFAULT 1 CHECK (active IN (0, 1)),
   must_change_password INTEGER NOT NULL DEFAULT 1 CHECK (must_change_password IN (0, 1)),
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -187,6 +206,10 @@ CREATE INDEX IF NOT EXISTS idx_pieces_passage ON pieces(passage_id);
 CREATE INDEX IF NOT EXISTS idx_pieces_presence ON pieces(presence_status);
 CREATE INDEX IF NOT EXISTS idx_pieces_condition ON pieces(condition_status);
 CREATE INDEX IF NOT EXISTS idx_piece_movements_piece ON piece_movements(piece_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_damage_reports_piece ON damage_reports(piece_id, opened_at);
+CREATE INDEX IF NOT EXISTS idx_damage_reports_status ON damage_reports(status, opened_at);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_damage_reports_active_piece
+  ON damage_reports(piece_id) WHERE status != 'resuelto';
 CREATE INDEX IF NOT EXISTS idx_loans_piece_status ON loans(piece_id, status);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_loans_active_piece
   ON loans(piece_id)

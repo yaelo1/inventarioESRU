@@ -67,6 +67,7 @@
       <button class="nav-button" data-view="loans">Préstamos</button>
       <button class="nav-button" data-view="movements">Movimientos</button>
       <button class="nav-button" data-view="alerts">Alertas</button>
+      <button class="nav-button" data-view="damageReports">Reportes de daños</button>
       <button class="nav-button admin-only" data-view="users">Usuarios</button>
       <button class="nav-button" id="account-button" type="button">Mi cuenta</button>
       <button class="nav-button" id="logout-button" type="button">Salir</button>
@@ -296,6 +297,56 @@
       <div id="alerts-grid" class="inventory-grid" aria-live="polite"></div>
     </section>
 
+    <section class="panel is-hidden" id="damage-reports-view" data-view-panel="damageReports">
+      <div class="panel-header">
+        <div>
+          <h2>Reportes de daños</h2>
+          <p class="status-text">Seguimiento documental de piezas dañadas y procesos de restauración.</p>
+        </div>
+        <div class="panel-actions">
+          <button class="button" id="damage-csv-export-button" type="button">Descargar CSV</button>
+          <button class="button primary" id="damage-pdf-export-button" type="button">Descargar PDF</button>
+        </div>
+      </div>
+      <form class="damage-report-filters" id="damage-report-filters">
+        <label>
+          <span>Buscar</span>
+          <input id="damage-search" type="search" placeholder="Código, pieza, pasaje o descripción">
+        </label>
+        <label>
+          <span>Estado</span>
+          <select id="damage-status-filter">
+            <option value="activos">Activos</option>
+            <option value="abierto">Pendientes</option>
+            <option value="en_restauracion">En restauración</option>
+            <option value="resuelto">Resueltos</option>
+          </select>
+        </label>
+        <label>
+          <span>Conservación</span>
+          <select id="damage-condition-filter">
+            <option value="">Todas</option>
+            <option value="roto">Roto</option>
+            <option value="requiere_mantenimiento">Necesita restauración</option>
+            <option value="en_mantenimiento">En restauración</option>
+          </select>
+        </label>
+        <label>
+          <span>Pasaje</span>
+          <select id="damage-passage-filter"><option value="">Todos</option></select>
+        </label>
+        <label>
+          <span>Desde</span>
+          <input id="damage-date-from" type="date">
+        </label>
+        <label>
+          <span>Hasta</span>
+          <input id="damage-date-to" type="date">
+        </label>
+      </form>
+      <div id="damage-report-list" class="damage-report-list" aria-live="polite"></div>
+    </section>
+
     <section class="panel is-hidden admin-only" id="users-view" data-view-panel="users">
       <div class="panel-header">
         <div>
@@ -316,6 +367,7 @@
           <span>Rol</span>
           <select name="role">
             <option value="operador">Operador</option>
+            <option value="curadora">Curadora</option>
             <option value="admin">Admin</option>
             <option value="consulta">Consulta</option>
           </select>
@@ -375,6 +427,10 @@
               <dd class="piece-measurements"></dd>
             </div>
             <div>
+              <dt>Peso</dt>
+              <dd class="piece-weight"></dd>
+            </div>
+            <div>
               <dt>Resguardo completo</dt>
               <dd class="piece-storage-detail"></dd>
             </div>
@@ -405,6 +461,30 @@
       <span class="movement-transition"></span>
       <span class="movement-detail"></span>
       <time class="movement-date"></time>
+    </article>
+  </template>
+
+  <template id="damage-report-template">
+    <article class="damage-report-row">
+      <div class="damage-report-media">
+        <img class="damage-report-image" loading="lazy" decoding="async" alt="">
+        <span class="damage-report-placeholder">Sin imagen</span>
+      </div>
+      <div class="damage-report-identity">
+        <strong class="damage-report-piece"></strong>
+        <span class="damage-report-passage"></span>
+        <span class="damage-report-weight"></span>
+      </div>
+      <div class="damage-report-state">
+        <span class="damage-report-status"></span>
+        <span class="damage-report-condition"></span>
+      </div>
+      <div class="damage-report-summary">
+        <p class="damage-report-description"></p>
+        <span class="damage-report-responsible"></span>
+      </div>
+      <time class="damage-report-date"></time>
+      <button class="button small primary damage-follow-up" data-action="damage-follow-up" type="button">Seguimiento</button>
     </article>
   </template>
 

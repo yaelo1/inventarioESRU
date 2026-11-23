@@ -389,6 +389,174 @@ h2 {
   min-width: 180px;
 }
 
+.measurement-input {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: minmax(0, 1fr) 5rem;
+}
+
+.damage-report-filters {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(220px, 1.5fr) repeat(3, minmax(150px, 1fr)) repeat(2, minmax(135px, 0.75fr));
+  margin-bottom: 1rem;
+}
+
+.damage-report-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.damage-report-filters span,
+.damage-report-history > strong {
+  color: var(--brown-light);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.damage-report-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.damage-report-row {
+  align-items: center;
+  background: var(--cream);
+  border: 1px solid var(--parchment-dark);
+  border-left: 5px solid var(--amber);
+  border-radius: 6px;
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: 76px minmax(190px, 1.1fr) minmax(150px, 0.75fr) minmax(220px, 1.4fr) minmax(115px, 0.55fr) auto;
+  min-width: 0;
+  padding: 0.65rem;
+}
+
+.damage-report-row.status-en_revision {
+  border-left-color: var(--blue);
+}
+
+.damage-report-row.status-en_restauracion {
+  border-left-color: var(--red);
+}
+
+.damage-report-row.status-resuelto {
+  border-left-color: var(--green);
+  opacity: 0.88;
+}
+
+.damage-report-media {
+  align-items: center;
+  aspect-ratio: 1;
+  background: var(--parchment-dark);
+  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+  width: 76px;
+}
+
+.damage-report-image {
+  cursor: zoom-in;
+  display: none;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.damage-report-row.has-image .damage-report-image {
+  display: block;
+}
+
+.damage-report-row.has-image .damage-report-placeholder {
+  display: none;
+}
+
+.damage-report-placeholder {
+  color: var(--brown-light);
+  font-size: 0.62rem;
+  text-align: center;
+}
+
+.damage-report-identity,
+.damage-report-state,
+.damage-report-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.damage-report-identity strong,
+.damage-report-summary p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.damage-report-identity span,
+.damage-report-summary span,
+.damage-report-date {
+  color: var(--brown-light);
+  font-size: 0.72rem;
+}
+
+.damage-report-state span {
+  border: 1px solid var(--parchment-dark);
+  border-radius: 3px;
+  color: var(--brown-mid);
+  font-size: 0.65rem;
+  padding: 0.35rem 0.45rem;
+  width: fit-content;
+}
+
+.damage-report-summary p {
+  color: var(--brown-mid);
+  display: -webkit-box;
+  font-size: 0.78rem;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.damage-report-date {
+  line-height: 1.45;
+}
+
+.damage-report-history {
+  border-top: 1px solid var(--parchment-dark);
+  margin-top: 0.4rem;
+  padding-top: 0.85rem;
+}
+
+.damage-report-history > strong {
+  display: block;
+  margin: 0 0 0.65rem;
+}
+
+#damage-report-timeline {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.damage-timeline-item {
+  border-left: 3px solid var(--gold);
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.35rem 0.65rem;
+}
+
+.damage-timeline-item span,
+.damage-timeline-item time {
+  color: var(--brown-light);
+  font-size: 0.72rem;
+}
+
+.damage-resolution-field[hidden] {
+  display: none;
+}
+
 .checkbox-label {
   align-items: center;
   flex-direction: row;
@@ -1908,6 +2076,23 @@ textarea:focus {
   .user-form .button {
     grid-column: 1 / -1;
   }
+
+  .damage-report-filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .damage-report-row {
+    align-items: start;
+    grid-template-columns: 76px minmax(0, 1fr) minmax(150px, 0.55fr) auto;
+  }
+
+  .damage-report-media {
+    grid-row: 1 / 3;
+  }
+
+  .damage-report-summary {
+    grid-column: 2 / 4;
+  }
 }
 
 @media (max-width: 780px) {
@@ -1973,6 +2158,30 @@ textarea:focus {
   .user-form,
   .user-row {
     grid-template-columns: 1fr;
+  }
+
+  .damage-report-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .damage-report-row {
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
+
+  .damage-report-media {
+    grid-row: 1 / 2;
+    width: 72px;
+  }
+
+  .damage-report-state,
+  .damage-report-summary,
+  .damage-report-date,
+  .damage-follow-up {
+    grid-column: 2;
+  }
+
+  .damage-follow-up {
+    justify-self: start;
   }
 
   .borrow-fields {
@@ -2101,6 +2310,10 @@ textarea:focus {
 
   .summary-card {
     padding: 0.8rem;
+  }
+
+  .damage-report-filters {
+    grid-template-columns: 1fr;
   }
 
   .summary-card strong {

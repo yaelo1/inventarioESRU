@@ -138,6 +138,7 @@ function createPieceCard(template, piece, labelFor) {
   node.querySelector('.piece-notes').textContent = piece.observations || '';
   node.querySelector('.piece-material').textContent = piece.material || 'Sin material registrado';
   node.querySelector('.piece-measurements').textContent = measurementsFor(piece);
+  node.querySelector('.piece-weight').textContent = formatWeight(piece.weight_grams);
   node.querySelector('.piece-storage-detail').textContent = storageLocationFor(piece);
   node.querySelector('[data-action="select-exhibition"]').disabled = selected || piece.presence_status === 'en_mantenimiento';
   return node;
@@ -148,6 +149,16 @@ export function storageLocationFor(piece) {
   if (piece.box) parts.push(`Caja ${piece.box}`);
   if (piece.drawer) parts.push(`Cajón ${piece.drawer}`);
   return parts.join(' / ') || 'Sin resguardo';
+}
+
+export function formatWeight(weightGrams) {
+  if (weightGrams === null || weightGrams === undefined || weightGrams === '') return 'Sin peso registrado';
+  const grams = Number(weightGrams);
+  if (!Number.isFinite(grams) || grams <= 0) return 'Sin peso registrado';
+  if (grams >= 1000) {
+    return `${(grams / 1000).toLocaleString('es-MX', { maximumFractionDigits: 3 })} kg`;
+  }
+  return `${grams.toLocaleString('es-MX', { maximumFractionDigits: 2 })} g`;
 }
 
 function displayLocationFor(piece, loaned) {

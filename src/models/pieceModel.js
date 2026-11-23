@@ -5,7 +5,7 @@ const writableFields = [
   'piece_number', 'consecutive_number', 'name', 'artist', 'box', 'drawer',
   'showcase', 'exhibition_location', 'custodian', 'never_leaves_box',
   'presence_status', 'condition_status', 'maintenance_required',
-  'material', 'deep', 'length', 'height', 'observations', 'loan_notes',
+  'material', 'deep', 'length', 'height', 'weight_grams', 'observations', 'loan_notes',
   'is_loan_related', 'image_path', 'original_image_path', 'thumbnail_path', 'active'
 ];
 

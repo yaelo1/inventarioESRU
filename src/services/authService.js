@@ -4,7 +4,7 @@ const userModel = require('../models/userModel');
 const sessionModel = require('../models/sessionModel');
 
 const COOKIE_NAME = 'inventory_session';
-const roles = ['admin', 'operador', 'consulta'];
+const roles = ['admin', 'operador', 'curadora', 'consulta'];
 
 function appError(message, status) {
   const error = new Error(message);
